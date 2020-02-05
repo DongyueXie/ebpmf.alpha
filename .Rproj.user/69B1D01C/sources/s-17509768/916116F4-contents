@@ -1,0 +1,15 @@
+n=2^16
+sigma=0.5
+mu=c(rep(3,n/4), rep(5, n/4), rep(6, n/4), rep(3, n/4))
+x = rpois(n,exp(mu+rnorm(n,0,sigma)))
+
+#fit1=smash.poiss(x)
+fit2=smash.gen.poiss(x)
+
+
+
+plot(x,col='grey80')
+#lines(fit1)
+lines(fit2$lambda.est,col=4)
+lines(exp(mu),col=3)
+fit2$nugget.est
