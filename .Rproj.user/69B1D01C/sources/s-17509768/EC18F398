@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1581197726015.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "EC18F398",
+    "lastKnownWriteTime" : 1581220347,
+    "last_content_update" : 1581220347677,
+    "path" : "~/stm/R/stm.R",
+    "project_path" : "R/stm.R",
+    "properties" : {
+        "cursorPosition" : "170,38",
+        "scrollLine" : "148"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

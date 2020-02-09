@@ -2,31 +2,44 @@
 % Please edit documentation in R/smash_gen_poiss.R
 \name{smash.gen.poiss}
 \alias{smash.gen.poiss}
-\title{Smooth Poisson data, accounting for nugget effect}
+\title{Smooth Poisson sequence, accounting for nugget effect}
 \usage{
-smash.gen.poiss(x, sigma = NULL, s = 1, method = "ti.thresh",
-  ash.pm = FALSE, eps = 0.01, filter.number = 1,
-  family = "DaubExPhase")
+smash.gen.poiss(x, nugget = NULL, s = 1, transformation = "vst",
+  method = "ti.thresh", robust = T, robust.q = 0.99,
+  nug.init = NULL, ash.pm = FALSE, eps = "estimate",
+  filter.number = 1, family = "DaubExPhase", maxiter = 10,
+  tol = 0.01)
 }
 \arguments{
-\item{filter.number, family:}{wavelet basis, see wavethresh pakcage for more details.}
+\item{x}{observed Poisson sequence}
 
-\item{x:}{observed Poisson sequence}
+\item{nugget}{nugget effect}
 
-\item{sigma:}{nugget effect}
+\item{s}{Scale factor for Poisson observations: y~Pois(scale*lambda), can be a vector.}
 
-\item{s:}{Scale factor for Poisson observations: y~Pois(scale*lambda).}
+\item{transformation}{transformation of Poisson data, either 'vst' or 'lik_expansion'}
 
-\item{method:}{smoothiing method, smash or ti.thresh. When n is large, ti.thresh is much faster.}
+\item{method}{smoothing method for Gaussian sequence, either 'smash' or 'ti.thresh'. When n is large, ti.thresh is much faster}
 
-\item{ash.pm:}{whehter use ash posterior mean approxiamtion if x=0. If not x = x+eps}
+\item{robust}{whether perform robust wavelet regression}
 
-\item{eps:}{if x=0, x = x + eps}
+\item{robust.q}{quantile to determine outliers}
 
-\item{maxiter:}{maximum iterations, in general, 1 iteration is enough.}
+\item{nug.init}{init value of nugget effect, either a scalar or NULL}
 
-\item{tol:}{tolerance to stop iterations.}
+\item{ash.pm}{If choose lik_expansion, whehter use ash posterior mean approxiamtion if x=0. If not x = x+eps.}
+
+\item{eps}{If choose lik_expansion, if x=0, set x = x + eps. Either input a numerical value or 'estimate'. If estimate, eps = sum(x==1)/sum(x<=1)}
+
+\item{filter.number, family}{wavelet basis, see wavethresh pakcage for more details}
+
+\item{maxiter}{max iterations for estimating nugget effect}
+
+\item{tol}{tolerance to stop iterations.}
+}
+\value{
+estimated smoothed \lambda, estimated nugget effect.
 }
 \description{
-Smooth Poisson data, accounting for nugget effect
+Smooth Poisson sequence, accounting for nugget effect
 }

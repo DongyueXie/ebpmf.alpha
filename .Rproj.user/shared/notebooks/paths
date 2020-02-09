@@ -1,3 +1,5 @@
+/home/dyxie/SMF/analysis/GTExSplicing.Rmd="4554649"
+/home/dyxie/SMF/code/GTEx Splicing.R="1A5CBD68"
 /home/dyxie/smashproject/TF_order.R="148F010C"
 /home/dyxie/smashproject/smash_gen.R="B6F0E7B0"
 /home/dyxie/stm/DESCRIPTION="6A6A18D9"
@@ -7,6 +9,7 @@
 /home/dyxie/stm/R/cluster_mix.R="616F79FE"
 /home/dyxie/stm/R/ebpm_exp_mixture.R="CE2D5339"
 /home/dyxie/stm/R/poisson2multinom.R="21ED345B"
+/home/dyxie/stm/R/smash_gen_binom.R="85CA48EB"
 /home/dyxie/stm/R/smash_gen_poiss.R="CCDCAEF8"
 /home/dyxie/stm/R/stm.R="B29EDAA"
 /home/dyxie/stm/R/summary_stm.R="FEA15AE3"

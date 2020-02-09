@@ -6,15 +6,6 @@
 \usage{
 ebpm_control_default()
 }
-\arguments{
-\item{shape:}{shape parameters in to `ebpm` function, default to be 1}
-
-\item{point_mass:}{whether to use point mass estiamte.}
-
-\item{nullweight:}{weight on the first mixing component}
-
-\item{scale:}{scale parameters to ebpm}
-}
 \description{
 Default parameters of ebpm
 }

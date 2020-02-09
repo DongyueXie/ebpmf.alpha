@@ -5,7 +5,9 @@
 #'@param maxiter: maximum iterations
 #'@param tol: stop criteria
 #'@param bmsm_control: control parameters of BMSM, see bmsm_control_default()
+#'@param ebpm_method point_gamma or two_gamma
 #'@param ebpm_control: control parameters of ebpm, see ebpm_control_default()
+#'@param nug_control control parameters of smashgen, see nug_control_default()
 #'@param smooth_f,smooth_l: whether to get smooth estimate of loadings or factors.
 #'@param filter.number,family: wavelet basis, see wavethresh pakcage for more details.
 #'@param rounding: whether to round Z after each iteration.
@@ -19,7 +21,9 @@
 
 stm = function(X,K,init = 'lee',maxiter=100,seed=123,tol=1e-4,
                   bmsm_control_l=list(), bmsm_control_f=list(),
+                  nug_control_l=list(), nug_control_f=list(),
                   filter.number = 1,family = "DaubExPhase",
+                  ebpm_method='point_gamma',
                   ebpm_control_l=list(), ebpm_control_f=list(),
                   smooth_f=TRUE,smooth_l=FALSE,rounding=FALSE,
                   nugget=FALSE,printevery=10,return_all=TRUE){
@@ -89,12 +93,30 @@ stm = function(X,K,init = 'lee',maxiter=100,seed=123,tol=1e-4,
     for(k in 1:K){
 
 
-      # Update L
+
 
       l_seq = rowSums(EZ[,,k])
       l_scale = sum(qf_hat$Ef[k,])
+
+
+
+      f_seq = colSums(EZ[,,k])
+      f_scale = sum(ql_hat$El[,k])
+
+      adj.ratio = sqrt(l_scale/f_scale)
+
+      l_scale = l_scale/adj.ratio
+      l_seq = l_seq * adj.ratio
+      f_scale = f_scale*adj.ratio
+      f_seq = f_seq / adj.ratio
+
+
+      #print(l_scale)
+      #print(f_scale)
+
+      # Update L
       if(smooth_l){
-        lk_hat = update_smooth(l_seq, l_scale, nugget,bmsm_control_l,filter.number = filter.number ,family = family)
+        lk_hat = update_smooth(l_seq, l_scale, nugget,bmsm_control_l,nug_control_l,filter.number = filter.number ,family = family)
         ql_hat$El[,k] = lk_hat$E
         ql_hat$Elogl[,k] = lk_hat$Elog
         #loglikL = loglikL + lk_hat$loglik
@@ -103,7 +125,7 @@ stm = function(X,K,init = 'lee',maxiter=100,seed=123,tol=1e-4,
         gl_hat[[k]] = lk_hat$pi_weights
 
       }else{
-        lk_hat = update_nsmooth(l_seq,l_scale,ebpm_control_l)
+        lk_hat = update_nsmooth(l_seq,l_scale,ebpm_control_l,ebpm_method)
         ql_hat$El[,k] = lk_hat$posterior$mean
         ql_hat$Elogl[,k] = lk_hat$posterior$mean_log
         #loglikL = loglikL + lk_hat$log_likelihood
@@ -111,13 +133,11 @@ stm = function(X,K,init = 'lee',maxiter=100,seed=123,tol=1e-4,
         gl_hat[[k]] = lk_hat$fitted_g
       }
 
-      # Update R
 
-      f_seq = colSums(EZ[,,k])
-      f_scale = sum(ql_hat$El[,k])
+      # Update F
 
       if(smooth_f){
-        fk_hat = update_smooth(f_seq, f_scale,nugget,bmsm_control_f,filter.number = filter.number ,family = family)
+        fk_hat = update_smooth(f_seq, f_scale,nugget,bmsm_control_f,nug_control_f,filter.number = filter.number ,family = family)
         qf_hat$Ef[k,] = fk_hat$E
         qf_hat$Elogf[k,] = fk_hat$Elog
         #loglikR = loglikR + fk_hat$loglik
@@ -126,7 +146,7 @@ stm = function(X,K,init = 'lee',maxiter=100,seed=123,tol=1e-4,
         gf_hat[[k]] = fk_hat$pi_weight
 
       }else{
-        fk_hat = update_nsmooth(f_seq,f_scale,ebpm_control_f)
+        fk_hat = update_nsmooth(f_seq,f_scale,ebpm_control_f,ebpm_method)
         qf_hat$Ef[k,] = fk_hat$posterior$mean
         qf_hat$Elogf[k,] = fk_hat$posterior$mean_log
         #loglikR = loglikR + fk_hat$log_likelihood
@@ -193,13 +213,34 @@ softmax3d <- function(x){
   return(probs)
 }
 
-update_smooth = function(x,sf,nugget,bmsm_control=list(),
+update_smooth = function(x,sf,nugget,bmsm_control=list(),nug_control=list(),
                          filter.number = 1,family = "DaubExPhase"){
   if(min(x) < 0){stop ("negative values in x not permitted")}
   if(nugget){
-    fit = smash.gen.poiss(x,s=sf,filter.number=filter.number,family=family)
+
+    control0 = nug_control_default()
+    if (any(!is.element(names(nug_control),names(control0))))
+      stop("Argument \"nug_control\" contains unknown parameter names")
+
+    control1 = modifyList(control0,nug_control,keep.null = TRUE)
+
+    fit = smash.gen.poiss(x,s=sf,filter.number=filter.number,
+                          family=family,nugget=control1$nugget,
+                          robust=control1$robust,
+                          robust.q = control1$robust.q,
+                          transformation = control1$transformation,
+                          method = control1$method,
+                          nug.init = control1$nug.init,
+                          ash.pm = control1$ash.pm,
+                          eps = control1$eps,
+                          maxiter = control1$maxiter,
+                          tol = control1$tol)
     est = fit$lambda.est
-    est_log = fit$mu.est
+    if(control1$transformation=='lik_expansion'){
+      est_log = fit$mu.est
+    }else{
+      est_log = log(est)
+    }
     pi_weights = NULL
     nugget.est = fit$nugget.est
   }else{
@@ -223,7 +264,7 @@ update_smooth = function(x,sf,nugget,bmsm_control=list(),
 }
 
 
-update_nsmooth = function(x,s,ebpm_control = list()){
+update_nsmooth = function(x,s,ebpm_control = list(),ebpm_method){
 
   control0 = ebpm_control_default()
   if (any(!is.element(names(ebpm_control),names(control0))))
@@ -243,17 +284,20 @@ update_nsmooth = function(x,s,ebpm_control = list()){
   #d = control1$d
   pi0 = control1$pi0
 
-  #ebpm_exp_mixture(x,s,scale,point_mass,nullweight,weight=rep(1,length(x)),
-  #                 g_init,fix_g,m,control,low,d,shape)
+  if(ebpm_method=='point_gamma'){
+    out = ebpm_point_gamma(x,s,g_init,fix_g,pi0,control)
+  }
+  if(ebpm_method=='two_gamma'){
+    out = ebpm_two_gamma(x,s,g_init,fix_g,pi0,control)
+  }
 
-  ebpm_point_gamma(x,s,g_init,fix_g,pi0,control)
+  out
+
+
+
 }
 
 #'@title Default parameters of ebpm
-#'@param shape: shape parameters in to `ebpm` function, default to be 1
-#'@param point_mass: whether to use point mass estiamte.
-#'@param nullweight: weight on the first mixing component
-#'@param scale: scale parameters to ebpm
 #'@export
 ebpm_control_default = function(){
   list(pi0 = 'estimate',
@@ -268,5 +312,20 @@ ebpm_control_default = function(){
        #d=NULL
 }
 
+
+#'@title Default parameters of smash gen
+#'@export
+nug_control_default = function(){
+  list(nugget = NULL,
+       robust=T,
+       robust.q = 0.99,
+       transformation = 'lik_expansion',
+       method='ti.thresh',
+       nug.init = NULL,
+       ash.pm=FALSE,
+       eps='estimate',
+       maxiter=10,
+       tol=1e-2)
+}
 
 

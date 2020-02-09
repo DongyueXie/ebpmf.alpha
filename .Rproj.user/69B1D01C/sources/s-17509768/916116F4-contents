@@ -13,3 +13,31 @@ plot(x,col='grey80')
 lines(fit2$lambda.est,col=4)
 lines(exp(mu),col=3)
 fit2$nugget.est
+
+
+
+EZ = fit_stm_nugget$EZ
+plot((EZ[,,3])[50,],type = 'p')
+
+l_seq = rowSums(EZ[,,3])
+l_scale = sum(fit_stm_nugget$qf$Ef[k,])
+
+f_seq = colSums(EZ[,,1])
+f_scale = sum(fit_stm_nugget$ql$El[,1])
+
+plot(f_seq/f_scale,col='grey80')
+fit=smash.gen.poiss(f_seq,s=f_scale,transformation = 'lik_expansion',robust = T,robust.q = 0.1)
+fit$nugget.est
+lines(fit$lambda.est)
+fit = update_smooth(f_seq, f_scale,TRUE,bmsm_control=list(),nug_control=list(),filter.number = 1 ,family = 'DaubExPhase')
+lines(fit$E)
+
+
+fit_stm_nugget = stm(t(RPS13[,idx]),K,init =list(L_init=fit_NMF$W,F_init = fit_NMF$H) ,return_all = T,tol=1e-2,nugget = TRUE,nug_control_f=list(robust=F),ebpm_method='point_gamma',maxiter = 10)
+lf = poisson2multinom(t(fit_stm_nugget$qf$Ef),fit_stm_nugget$ql$El)
+
+
+plot(lf$FF[,1],col=2,ylim=range(lf$FF),type='l',xlab = 'base',ylab='Intensity',main='Factors')
+lines(lf$FF[,2],col=3)
+lines(lf$FF[,3],col=4)
+

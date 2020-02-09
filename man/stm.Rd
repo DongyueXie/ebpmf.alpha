@@ -2,11 +2,12 @@
 % Please edit documentation in R/stm.R
 \name{stm}
 \alias{stm}
-\title{Smoothed topic model}
+\title{Smoothed Poisson Matrix Factorization}
 \usage{
 stm(X, K, init = "lee", maxiter = 100, seed = 123, tol = 1e-04,
   bmsm_control_l = list(), bmsm_control_f = list(),
-  filter.number = 1, family = "DaubExPhase", ebpm_control_l = list(),
+  nug_control_l = list(), nug_control_f = list(), filter.number = 1,
+  family = "DaubExPhase", ebpm_control_l = list(),
   ebpm_control_f = list(), smooth_f = TRUE, smooth_l = FALSE,
   rounding = FALSE, nugget = FALSE, printevery = 10,
   return_all = TRUE)
@@ -40,5 +41,5 @@ Lambda: estimated lambda; init: initial values
 KL: mean KL of lambda and estimated lambda
 }
 \description{
-Smoothed topic model
+Smoothed Poisson Matrix Factorization
 }
