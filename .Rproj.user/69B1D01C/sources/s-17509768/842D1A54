@@ -1,21 +1,21 @@
 {
     "collab_server" : "",
     "contents" : "",
-    "created" : 1581197726015.000,
+    "created" : 1581526832577.000,
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
     "hash" : "0",
-    "id" : "EC18F398",
+    "id" : "842D1A54",
     "lastKnownWriteTime" : 1581220347,
-    "last_content_update" : 1581220347677,
+    "last_content_update" : 1581220347,
     "path" : "~/stm/R/stm.R",
     "project_path" : "R/stm.R",
     "properties" : {
-        "cursorPosition" : "170,38",
-        "scrollLine" : "148"
+        "cursorPosition" : "172,5",
+        "scrollLine" : "0"
     },
-    "relative_order" : 2,
+    "relative_order" : 7,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

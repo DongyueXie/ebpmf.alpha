@@ -1,0 +1,7 @@
+
+
+#compare methods like nmf, stm-bmsm, stm-smashgen, stm-smashgen robust, HALS-wavelet, HALS-runmed
+
+gene_splicing_study = function(X,nreps = 3){
+  
+}

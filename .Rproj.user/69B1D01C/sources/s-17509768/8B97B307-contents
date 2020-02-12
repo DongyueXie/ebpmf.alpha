@@ -169,7 +169,7 @@ NuggetEst=function(y,st,nug.init=NULL,method,filter.number,family,maxiter,tol){
 
 }
 
-#'@export
+
 ispowerof2 <- function (x){
   x >= 1 & 2^ceiling(log2(x)) == x
 }

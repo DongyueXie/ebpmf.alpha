@@ -7,13 +7,15 @@
 stm(X, K, init = "lee", maxiter = 100, seed = 123, tol = 1e-04,
   bmsm_control_l = list(), bmsm_control_f = list(),
   nug_control_l = list(), nug_control_f = list(), filter.number = 1,
-  family = "DaubExPhase", ebpm_control_l = list(),
-  ebpm_control_f = list(), smooth_f = TRUE, smooth_l = FALSE,
-  rounding = FALSE, nugget = FALSE, printevery = 10,
-  return_all = TRUE)
+  family = "DaubExPhase", ebpm_method = "point_gamma",
+  ebpm_control_l = list(), ebpm_control_f = list(), smooth_f = TRUE,
+  smooth_l = FALSE, rounding = FALSE, nugget = FALSE,
+  printevery = 10, return_all = TRUE)
 }
 \arguments{
 \item{filter.number, family:}{wavelet basis, see wavethresh pakcage for more details.}
+
+\item{ebpm_method}{point_gamma or two_gamma}
 
 \item{smooth_f, smooth_l:}{whether to get smooth estimate of loadings or factors.}
 
@@ -30,6 +32,8 @@ stm(X, K, init = "lee", maxiter = 100, seed = 123, tol = 1e-04,
 \item{bmsm_control:}{control parameters of BMSM, see bmsm_control_default()}
 
 \item{ebpm_control:}{control parameters of ebpm, see ebpm_control_default()}
+
+\item{nug_control}{control parameters of smashgen, see nug_control_default()}
 
 \item{rounding:}{whether to round Z after each iteration.}
 }

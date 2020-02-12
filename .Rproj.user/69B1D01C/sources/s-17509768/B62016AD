@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1581525676789.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "440818612",
+    "id" : "B62016AD",
+    "lastKnownWriteTime" : 1581526814,
+    "last_content_update" : 1581526814620,
+    "path" : "~/stm/R/NMF_HALS.R",
+    "project_path" : "R/NMF_HALS.R",
+    "properties" : {
+        "cursorPosition" : "4,45",
+        "scrollLine" : "0",
+        "tempName" : "Untitled3"
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
