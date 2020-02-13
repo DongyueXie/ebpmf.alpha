@@ -54,7 +54,7 @@ smash.gen.poiss = function(x,nugget=NULL,s=1,
           lambda_tilde[x<1] = x_pm[x<1]
         }else{
           if(eps == 'estimate'){
-            eps = sum(round(x)==1)/sum(round(x)<=1)
+            eps = sum(round(x)==1)/sum(round(x)<=1)+0.1
           }
           lambda_tilde[x<1] = (x[x<1]+eps)/s
         }
@@ -71,6 +71,7 @@ smash.gen.poiss = function(x,nugget=NULL,s=1,
   if(robust){
     win.size = round(sqrt(n)/2)*2+1
     #win.size = round(log(n,2)/2)*2+1
+    #browser()
     y.wd = wd(y,filter.number,family,'station')
     y.wd.coefJ = accessD(y.wd,level = log(n,2)-1)
     y.rmed = runmed(y,win.size)

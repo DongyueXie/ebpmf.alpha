@@ -118,3 +118,8 @@ dbinom_log = function(x,nx,p){
 dbetabinom = function(x,size,a,b){
   lchoose(size,round(x))+lbeta(x+a,size-x+b)-lbeta(a,b)
 }
+
+mixsqp_control_defaults <- function() {
+  return(list(verbose = F))
+}
+

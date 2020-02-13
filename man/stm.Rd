@@ -4,7 +4,7 @@
 \alias{stm}
 \title{Smoothed Poisson Matrix Factorization}
 \usage{
-stm(X, K, init = "lee", maxiter = 100, seed = 123, tol = 1e-04,
+stm(X, K, init = "lee", maxiter = 100, tol = 1e-04,
   bmsm_control_l = list(), bmsm_control_f = list(),
   nug_control_l = list(), nug_control_f = list(), filter.number = 1,
   family = "DaubExPhase", ebpm_method = "point_gamma",

@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1581538175094.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3610167384",
+    "id" : "D36B040F",
+    "lastKnownWriteTime" : 1581563834,
+    "last_content_update" : 1581563834579,
+    "path" : "~/SMF/analysis/stmGTEx.Rmd",
+    "project_path" : null,
+    "properties" : {
+        "chunk_output_type" : "console",
+        "cursorPosition" : "253,22",
+        "scrollLine" : "239"
+    },
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

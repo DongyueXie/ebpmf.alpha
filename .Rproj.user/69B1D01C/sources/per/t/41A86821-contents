@@ -1,0 +1,170 @@
+library(stm)
+library(NNLM)
+
+
+sum_base = function(x,base){
+  x = x[1:(floor(length(x)/base)*base)]
+  colSums(matrix(x,nrow=base))
+}
+
+#compare methods like nmf, stm-bmsm, stm-smashgen, stm-smashgen robust, HALS-wavelet, HALS-runmed
+
+gene_splicing_study = function(X,name,K,nreps = 3,seed=12345,base=1){
+
+  set.seed(seed)
+
+  if(base>1){
+    X = t(apply(X, 1, sum_base,base=base))
+  }
+
+  nmf_loss = Inf
+  stm_loss = Inf
+  stm_nugget_loss = Inf
+  stm_nugget_robust_loss = Inf
+  hals_wavelet_loss = Inf
+  hals_runmed_loss = Inf
+
+  for (reps in 1:nreps) {
+
+    print(reps)
+
+    fit_NMF = nnmf(X,k=K,method = 'scd',loss='mkl',verbose = F)
+    if(min(fit_NMF$mkl)<nmf_loss){
+      nmf_loss = min(fit_NMF$mkl)
+      save(fit_NMF,file = paste('~/SMF/data/',name,'_NMF_mkl_scd_K',K,'_base',base,'.RData',sep = ''))
+    }
+
+    fit_stm = stm(X,K,init = list(L_init=fit_NMF$W,F_init = fit_NMF$H),
+                  return_all = FALSE,tol=1e-3,maxiter=50,printevery = 1e5)
+    if(fit_stm$KL[length(fit_stm$KL)]<stm_loss){
+      stm_loss=fit_stm$KL[length(fit_stm$KL)]
+      save(fit_stm,file=paste('~/SMF/data/',name,'_stm_bmsm_K',K,'_base',base,'.RData',sep = ''))
+    }
+
+    fit_stm_nugget_robust = stm(X,K,init = list(L_init=fit_NMF$W,F_init = fit_NMF$H),
+                                return_all = FALSE,tol=1e-2,nugget = TRUE,maxiter=50,printevery = 1e5)
+    if(fit_stm_nugget_robust$KL[length(fit_stm_nugget_robust$KL)]<stm_nugget_robust_loss){
+      stm_nugget_robust_loss=fit_stm_nugget_robust$KL[length(fit_stm_nugget_robust$KL)]
+      save(fit_stm_nugget_robust,file=paste('~/SMF/data/',name,'_stm_nugget_robust_K',K,'_base',base,'.RData',sep = ''))
+    }
+
+    fit_stm_nugget = stm(X,K,init = list(L_init=fit_NMF$W,F_init = fit_NMF$H),
+                         return_all = FALSE,tol=1e-2,nugget = TRUE,maxiter=50,printevery = 1e5,
+                         nug_control_f = list(robust=F))
+    if(fit_stm_nugget$KL[length(fit_stm_nugget$KL)]<stm_nugget_loss){
+      stm_nugget_loss=fit_stm_nugget$KL[length(fit_stm_nugget$KL)]
+      save(fit_stm_nugget,file=paste('~/SMF/data/',name,'_stm_nugget_K',K,'_base',base,'.RData',sep = ''))
+    }
+
+    fit_hals_wavelet = NMF_HALS(X,K,smooth_method = 'wavelet',printevery = 1e5)
+    if(fit_hals_wavelet$loss[length(fit_hals_wavelet$loss)]<hals_wavelet_loss){
+      hals_wavelet_loss = fit_hals_wavelet$loss[length(fit_hals_wavelet$loss)]
+      save(fit_hals_wavelet,file=paste('~/SMF/data/',name,'_hals_wavelet_K',K,'_base',base,'.RData',sep = ''))
+    }
+
+    fit_hals_runmed = NMF_HALS(X,K,smooth_method = 'runmed',printevery = 1e5)
+
+    if(fit_hals_runmed$loss[length(fit_hals_runmed$loss)]<hals_runmed_loss){
+      hals_runmed_loss = fit_hals_runmed$loss[length(fit_hals_runmed$loss)]
+      save(fit_hals_runmed,file=paste('~/SMF/data/',name,'_hals_runmed_K',K,'_base',base,'.RData',sep = ''))
+    }
+  }
+}
+
+
+base=5
+# RPS13
+
+RPS13 = read.table('/project2/compbio/CoverageCounts/Counts_11:17095938-17099220.txt.gz',header = TRUE)
+
+tissues = colnames(RPS13)
+tissue = c()
+for(i in 1:length(tissues)){
+  tissue = c(tissue, (strsplit(tissues[i],split = '_')[[1]])[1])
+}
+
+idx = c(which(tissue=='GTEXAdipose'), which(tissue=='GTEXSkinExposed'))
+
+K=3
+
+gene_splicing_study(t(RPS13[,idx]),'RPS13',K,base=base)
+
+# set.seed(123)
+# fit_NMF = nnmf(t(RPS13[,idx]),k=K,method = 'lee',loss='mkl')
+# save(fit_NMF,file = '~/SMF/data/RPS13_NMF_mkl_lee_K3.RData')
+#
+# fit_stm = stm(t(RPS13[,idx]),K,init = list(L_init=fit_NMF$W,F_init = fit_NMF$H),return_all = FALSE,tol=1e-5)
+# save(fit_stm,file = '~/SMF/data/RPS13_stm_bmsm_K3.RData')
+#
+# fit_stm_nugget = stm(t(RPS13[,idx]),K,init = list(L_init=fit_NMF$W,F_init = fit_NMF$H),return_all = FALSE,tol=1e-5,nugget = TRUE)
+# save(fit_stm_nugget,file = '~/SMF/data/RPS13_stm_nugget_K3.RData')
+
+
+
+### GPX3
+
+GPX3 = read.table('/project2/compbio/CoverageCounts/Counts_5:150399998-150408554.txt.gz',header = TRUE)
+
+tissues = colnames(GPX3)
+tissue = c()
+for(i in 1:length(tissues)){
+  tissue = c(tissue, (strsplit(tissues[i],split = '_')[[1]])[1])
+}
+
+idx = c(which(tissue=='GTEXAdipose'), which(tissue=='GTEXSkinExposed'))
+
+K=3
+
+gene_splicing_study(t(GPX3[,idx]),'GPX3',K,base=base)
+
+
+# set.seed(123)
+#
+# fit_NMF = nnmf(t(GPX3[,idx]),k=K,method = 'lee',loss='mkl',n.threads = 4)
+# save(fit_NMF,file = '~/SMF/data/GPX3_NMF_mkl_lee_K3.RData')
+#
+# fit_stm = stm(t(GPX3[,idx]),K,init = list(L_init=fit_NMF$W,F_init = fit_NMF$H),return_all = FALSE,tol=1e-5,maxiter=50)
+# save(fit_stm,file = '~/SMF/data/GPX3_stm_bmsm_K3.RData')
+#
+# fit_stm_nugget = stm(t(GPX3[,idx]),K,init = list(L_init=fit_NMF$W,F_init = fit_NMF$H),return_all = FALSE,tol=1e-5,nugget = TRUE)
+# save(fit_stm_nugget,file = '~/SMF/data/GPX3_stm_nugget_K3.RData')
+
+### PSAP
+
+PSAP = read.table('/project2/compbio/CoverageCounts/Counts_10:73576054-73611082.txt.gz',header = TRUE)
+
+tissues = colnames(PSAP)
+tissue = c()
+for(i in 1:length(tissues)){
+  tissue = c(tissue, (strsplit(tissues[i],split = '_')[[1]])[1])
+}
+
+idx = c(which(tissue=='GTEXAdipose'), which(tissue=='GTEXSkinExposed'))
+
+idx = idx[-which(colSums(PSAP[,idx])==0)]
+
+K=3
+
+gene_splicing_study(t(PSAP[,idx]),'PSAP',K,base=base)
+
+# set.seed(123)
+#
+# fit_NMF = nnmf(t(PSAP[,idx]),k=K,method = 'lee',loss='mkl',n.threads = 4)
+# save(fit_NMF,file = '~/SMF/data/PSAP_NMF_mkl_lee_K3.RData')
+#
+#
+# fit_stm_nugget = stm(t(PSAP[,idx]),K,init = list(L_init=fit_NMF$W,F_init = fit_NMF$H),return_all = FALSE,tol=1e-2,nugget = TRUE)
+# save(fit_stm_nugget,file = '~/SMF/data/PSAP_stm_nugget_K3.RData')
+#
+# K=4
+#
+# set.seed(123)
+#
+# fit_NMF = nnmf(t(PSAP[,idx]),k=K,method = 'lee',loss='mkl',n.threads = 4)
+# save(fit_NMF,file = '~/SMF/data/PSAP_NMF_mkl_lee_K4.RData')
+#
+#
+# fit_stm_nugget = stm(t(PSAP[,idx]),K,init = list(L_init=fit_NMF$W,F_init = fit_NMF$H),return_all = FALSE,tol=1e-2,nugget = TRUE)
+# save(fit_stm_nugget,file = '~/SMF/data/PSAP_stm_nugget_K4.RData')
+
+

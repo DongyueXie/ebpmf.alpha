@@ -19,7 +19,7 @@
 #'@import ebpm
 #'@export
 
-stm = function(X,K,init = 'lee',maxiter=100,seed=123,tol=1e-4,
+stm = function(X,K,init = 'lee',maxiter=100,tol=1e-4,
                   bmsm_control_l=list(), bmsm_control_f=list(),
                   nug_control_l=list(), nug_control_f=list(),
                   filter.number = 1,family = "DaubExPhase",
@@ -27,7 +27,7 @@ stm = function(X,K,init = 'lee',maxiter=100,seed=123,tol=1e-4,
                   ebpm_control_l=list(), ebpm_control_f=list(),
                   smooth_f=TRUE,smooth_l=FALSE,rounding=FALSE,
                   nugget=FALSE,printevery=10,return_all=TRUE){
-  set.seed(seed)
+
   #initialize q(Z)
 
   n = dim(X)[1]
@@ -99,16 +99,12 @@ stm = function(X,K,init = 'lee',maxiter=100,seed=123,tol=1e-4,
       l_scale = sum(qf_hat$Ef[k,])
 
 
-
-      f_seq = colSums(EZ[,,k])
-      f_scale = sum(ql_hat$El[,k])
-
-      adj.ratio = sqrt(l_scale/f_scale)
-
-      l_scale = l_scale/adj.ratio
-      l_seq = l_seq * adj.ratio
-      f_scale = f_scale*adj.ratio
-      f_seq = f_seq / adj.ratio
+      # adj.ratio = sqrt(l_scale/f_scale)
+      #
+      # l_scale = l_scale/adj.ratio
+      # l_seq = l_seq * adj.ratio
+      # f_scale = f_scale*adj.ratio
+      # f_seq = f_seq / adj.ratio
 
 
       #print(l_scale)
@@ -116,7 +112,8 @@ stm = function(X,K,init = 'lee',maxiter=100,seed=123,tol=1e-4,
 
       # Update L
       if(smooth_l){
-        lk_hat = update_smooth(l_seq, l_scale, nugget,bmsm_control_l,nug_control_l,filter.number = filter.number ,family = family)
+        lk_hat = update_smooth(l_seq, l_scale, nugget,bmsm_control_l,nug_control_l,
+                               filter.number = filter.number ,family = family)
         ql_hat$El[,k] = lk_hat$E
         ql_hat$Elogl[,k] = lk_hat$Elog
         #loglikL = loglikL + lk_hat$loglik
@@ -136,8 +133,12 @@ stm = function(X,K,init = 'lee',maxiter=100,seed=123,tol=1e-4,
 
       # Update F
 
+      f_seq = colSums(EZ[,,k])
+      f_scale = sum(ql_hat$El[,k])
+
       if(smooth_f){
-        fk_hat = update_smooth(f_seq, f_scale,nugget,bmsm_control_f,nug_control_f,filter.number = filter.number ,family = family)
+        fk_hat = update_smooth(f_seq, f_scale,nugget,bmsm_control_f,nug_control_f,
+                               filter.number = filter.number ,family = family)
         qf_hat$Ef[k,] = fk_hat$E
         qf_hat$Elogf[k,] = fk_hat$Elog
         #loglikR = loglikR + fk_hat$loglik
@@ -187,7 +188,7 @@ stm = function(X,K,init = 'lee',maxiter=100,seed=123,tol=1e-4,
                 init = list(L_init = L_init,F_init=F_init,Lambda_init = lambda_init),EZ=EZ,
                 input = list(X=X,K=K),nugget=list(nugget_l=nugget_l,nugget_f=nugget_f)))
   }else{
-    return(list(ql=ql_hat$El,qf=qf_hat$Ef,nugget=list(nugget_l=nugget_l,nugget_f=nugget_f)))
+    return(list(ql=ql_hat$El,qf=qf_hat$Ef,nugget=list(nugget_l=nugget_l,nugget_f=nugget_f),KL=KL))
   }
 
 }

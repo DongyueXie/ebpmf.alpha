@@ -7,7 +7,7 @@
 NMF_HALS(X, k, smooth_u = F, smooth_v = T, ord = 1,
   smooth_method = "trendfiltering", filter.number = 1,
   family = "DaubExPhase", pos_u, pos_v, maxiter = 100,
-  printevery = 10, tol = 0.01, seed = 12345)
+  printevery = 10, tol = 0.01)
 }
 \arguments{
 \item{X}{N by p matrix}

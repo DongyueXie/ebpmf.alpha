@@ -3,6 +3,7 @@
 #'@param k number of topics
 #'@param smooth_method 'trendfiltering', 'wavelet' or 'runmed'
 #'@param pos_u,pos_v position of observations
+#'@export
 #'@import wavethresh
 #'@import genlasso
 
@@ -10,10 +11,9 @@ NMF_HALS = function(X,k,smooth_u=F,smooth_v=T,ord=1,
                     smooth_method='trendfiltering',
                     filter.number=1,family='DaubExPhase',
                     pos_u,pos_v,maxiter=100,
-                    printevery=10,tol=1e-2,
-                    seed=12345){
+                    printevery=10,tol=1e-2){
 
-  set.seed(seed)
+
   quiet = function(x) {
     sink(tempfile())
     on.exit(sink())

@@ -1,8 +1,12 @@
 {
-    "path" : "~/stm/R",
+    "path" : "~/SMF",
     "sortOrder" : [
         {
-            "ascending" : true,
+            "ascending" : false,
+            "columnIndex" : 4
+        },
+        {
+            "ascending" : false,
             "columnIndex" : 2
         }
     ]
