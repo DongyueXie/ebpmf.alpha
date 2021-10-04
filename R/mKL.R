@@ -4,6 +4,5 @@
 
 mKL = function(A,B){
   D = A*log(A/B)-A+B
-  D[is.nan(D)] = 0
-  mean(D)
+  mean(as.matrix(D),na.rm=T)
 }

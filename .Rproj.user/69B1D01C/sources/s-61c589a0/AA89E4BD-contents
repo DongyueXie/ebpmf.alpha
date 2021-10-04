@@ -7,7 +7,7 @@
 #'@import wavethresh
 #'@import genlasso
 
-NMF_HALS = function(X,K,smooth_u=F,smooth_v=T,ord=1,
+NMF_HALS = function(X,k,smooth_u=F,smooth_v=T,ord=1,
                     smooth_method='trendfiltering',
                     filter.number=1,family='DaubExPhase',
                     pos_u,pos_v,maxiter=100,

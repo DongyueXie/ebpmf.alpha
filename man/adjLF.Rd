@@ -9,7 +9,7 @@ adjLF(L, FF)
 \arguments{
 \item{L}{N by K loading matrix}
 
-\item{FF}{K by p factor matrix}
+\item{FF}{p by K factor matrix}
 }
 \description{
 Make Init L and F on similar scale

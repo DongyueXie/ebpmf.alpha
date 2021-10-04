@@ -1,0 +1,214 @@
+---
+title: "Data set from Luis Lab"
+author: "Dongyue Xie"
+date: "2021-08-25"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Introduction
+
+"The idea is that gene expression at a given gene might be associated wit the marks in  parts of the genome near-by that gene. But we don’t know in advance exactly where to look for that signal - just nearby the gene. And the signal might be at different places for different marks or the same place."
+
+"So by running factor analysis I hope to automatically identify factors representing the things that covary… eg co-variation of gene expression with certain marks"
+
+Try to look at some data examples. 
+
+## CMC2
+
+CMC2 is a protein coding gene, with 10 exons.
+
+```{r}
+library(readr)
+CMC2_ATACseq = read_csv("data/luis/CMC2_ATACseq.csv")
+CMC2_RNAseq = read_csv("data/luis/CMC2_RNAseq.csv")
+CMC2_H3K4me1 = read_csv("data/luis/CMC2_H3K4me1.csv")
+
+CMC2_ATACseq = do.call(cbind.data.frame, CMC2_ATACseq)
+CMC2_RNAseq = do.call(cbind.data.frame, CMC2_RNAseq)
+CMC2_H3K4me1 = do.call(cbind.data.frame, CMC2_H3K4me1)
+
+dim(CMC2_ATACseq)
+dim(CMC2_RNAseq)
+dim(CMC2_H3K4me1)
+```
+
+What do data look like?
+
+```{r}
+plot(CMC2_ATACseq$AF08_Flu,type='l',xlab = 'locus',ylab='',main = 'CMC2 ATAC AF08_Flu')
+plot(CMC2_RNAseq$AF08_Flu,type='l',xlab = 'locus',ylab='',main = 'CMC2 RNA AF08_Flu')
+plot(CMC2_H3K4me1$AF08_Flu_H3K4me1,type='l',xlab = 'locus',ylab='',main = 'CMC2 H3K4me1 AF08_Flu')
+```
+
+How sparse the data are?
+
+```{r}
+sparse_prop = function(Y){
+  sum(Y==0)/prod(dim(Y))
+}
+sparse_prop(CMC2_ATACseq[,-c(1,2)])
+sparse_prop(CMC2_RNAseq[,-c(1,2)])
+sparse_prop(CMC2_H3K4me1[,-c(1,2)])
+```
+
+Get overlapping individuals 
+
+```{r}
+indis_ATAC = (colnames(CMC2_ATACseq))[-c(1,2)]
+indis_RNA = (colnames(CMC2_RNAseq))[-c(1,2)]
+indis_H3K4me1 = (colnames(CMC2_H3K4me1))[-c(1,2)]
+for(i in 1:length(indis_H3K4me1)){
+  name_i = strsplit(indis_H3K4me1[i],split = '_')[[1]]
+  indis_H3K4me1[i] = paste(name_i[1],name_i[2],sep = '_')
+}
+indis = intersect(intersect(indis_ATAC,indis_RNA),indis_H3K4me1)
+indis
+length(indis)
+```
+
+
+Only use NI individuals.
+
+```{r}
+indis_NI = c()
+for(i in 1:length(indis)){
+  id = strsplit(indis[i],split='_')[[1]][2]
+  if(id=='NI'){
+    indis_NI = c(indis_NI,indis[i])
+  }
+}
+```
+
+Try to run flashier on [RNA seq, H3K4me1, ATAC]
+
+```{r,eval=FALSE}
+Y_RNA = t(CMC2_RNAseq[,match(indis_NI,indis_RNA)+2])
+Y_H3K4 = t(CMC2_H3K4me1[,match(indis_NI,indis_H3K4me1)+2])
+Y_ATAC = t(CMC2_ATACseq[,match(indis_NI,indis_ATAC)+2])
+```
+
+Increase 200kb window to 2000kb to reduce the size of matrix
+
+```{r,eval=FALSE}
+Y_RNAr = do.call(cbind, by(t(Y_RNA), (seq(ncol(Y_RNA)) - 1) %/% 10, FUN = colSums))
+Y_H3K4r = do.call(cbind, by(t(Y_H3K4), (seq(ncol(Y_H3K4)) - 1) %/% 10, FUN = colSums))
+Y_ATACr = do.call(cbind, by(t(Y_ATAC), (seq(ncol(Y_ATAC)) - 1) %/% 10, FUN = colSums))
+```
+
+```{r,eval=FALSE}
+library(flashier)
+Y = cbind(Y_RNAr,Y_H3K4r,Y_ATACr)
+dim(Y)
+Y = log(Y+1e-4)
+# fit_flash = flashier::flash(Y,var.type = 1)
+# saveRDS(fit_flash,'output/flash_on_cmc2_reduced_2000kb.rds')
+
+#fit_flash_by_row = flashier::flash(Y,var.type = 1,greedy.Kmax=5)
+```
+
+```{r}
+ploter.flash.factor = function(fit_flash,k=1,p){
+  
+  #plot(fit_flash$loadings.pm[[2]][,k],type='l',xlab='locus',ylab='',main=paste('factor ',k))
+  par(mfrow=c(3,1))
+  plot(fit_flash$loadings.pm[[2]][1:(p/3),k],type='l',
+       xlab='',ylab='',main=paste('factor ',k, ', RNA'),col=2)
+  plot(fit_flash$loadings.pm[[2]][((p/3+1):(p/3*2)),k],type='l',
+       xlab='',ylab='',main='H3K4me1',col=3)
+  plot(fit_flash$loadings.pm[[2]][((p/3*2+1):(p)),k],type='l',
+       xlab='locus',ylab='',main='ATAC',col=4)
+  
+}
+
+ploter.flash.loading = function(fit_flash,K){
+  par(mfrow=c(ceiling(K/2),2))
+  for(k in 1:K){
+    plot(fit_flash$loadings.pm[[1]][,k],type='h',xlab='individuals',ylab='',main=paste('loading ',k))
+  }
+  
+}
+
+```
+
+```{r}
+fit_flash = readRDS('output/flash_on_cmc2_reduced_2000kb.rds')
+plot(fit_flash$pve,type='p',pch=20,xlab = 'k',ylab='pve')
+```
+
+```{r,fig.width=10,fig.height=15}
+ploter.flash.loading(fit_flash,10)
+```
+
+```{r,fig.width=12,fig.height=12}
+for(k in 1:10){
+  ploter.flash.factor(fit_flash,k,127827)
+}
+
+```
+
+
+Try to fit the wave ebmf
+
+```{r}
+source('code/wave_ebmf.R')
+#rm.idx = c(1:4921,(42609-4920+1):42609)
+#Y = cbind(Y_RNAr[,-rm.idx],Y_H3K4r[,-rm.idx],Y_ATACr[,-rm.idx])
+# fit_wave = wave_ebmf(Y,Kmax=10,s=fit_flash$residuals.sd)
+# saveRDS(fit_wave,'output/wave_flash_on_cmc2_reduced_2000kb.rds')
+fit_wave = readRDS('output/wave_flash_on_cmc2_reduced_2000kb.rds')
+par(mfrow=c(1,1))
+plot(fit_wave$pve,type='p',pch=20,xlab = 'k',ylab='pve')
+
+ploter.wave.flash.factor = function(fit_wave,k=1,p){
+  
+  #plot(fit_flash$loadings.pm[[2]][,k],type='l',xlab='locus',ylab='',main=paste('factor ',k))
+  par(mfrow=c(3,1))
+  plot(fit_wave$ldf$f[1:(p/3),k],type='l',
+       xlab='',ylab='',main=paste('factor ',k, ', RNA'),col=2)
+  plot(fit_wave$ldf$f[((p/3+1):(p/3*2)),k],type='l',
+       xlab='',ylab='',main='H3K4me1',col=3)
+  plot(fit_wave$ldf$f[((p/3*2+1):(p)),k],type='l',
+       xlab='locus',ylab='',main='ATAC',col=4)
+  
+}
+ploter.wave.flash.loading = function(fit_wave,K){
+  par(mfrow=c(ceiling(K/2),2))
+  for(k in 1:K){
+    plot(fit_wave$ldf$l[,k],type='h',xlab='individuals',ylab='',main=paste('loading ',k))
+  }
+  
+}
+```
+
+```{r,fig.width=8,fig.height=15}
+ploter.wave.flash.loading(fit_wave,10)
+```
+
+```{r,fig.width=12,fig.height=12}
+for(k in 1:10){
+  ploter.wave.flash.factor(fit_wave,k,127827)
+}
+
+```
+
+## FAM220A
+
+FAM220A is a protein coding gene with 2 exons.
+
+```{r,eval=F}
+FAM220A_ATACseq = read_csv("data/luis/FAM220A_ATACseq.csv")
+FAM220A_RNAseq = read_csv("data/luis/FAM220A_RNAseq.csv")
+FAM220A_H3K4me1 = read_csv("data/luis/FAM220A_H3K4me1.csv")
+
+FAM220A_ATACseq = do.call(cbind.data.frame, FAM220A_ATACseq)
+FAM220A_RNAseq = do.call(cbind.data.frame, FAM220A_RNAseq)
+FAM220A_H3K4me1 = do.call(cbind.data.frame, FAM220A_H3K4me1)
+
+dim(FAM220A_ATACseq)
+dim(FAM220A_RNAseq)
+dim(FAM220A_H3K4me1)
+```
+
+

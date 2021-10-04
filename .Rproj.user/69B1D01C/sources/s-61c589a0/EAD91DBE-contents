@@ -12,7 +12,9 @@
 #'@param smooth_f,smooth_l whether to get smooth estimate of loadings or factors.
 #'@param nugget whether to assume nugget effects
 #'@param return_all whether return all outputs or simplified ones
-#'@return EL,EF: posterior of loadings and factors
+#'@return ql,qf: posterior of loadings and factors
+#'@return Lambda: estimated lambda; init: initial values
+#'@return KL: mean KL of lambda and estimated lambda
 #'@import mixsqp
 #'@import NNLM
 #'@import ebpm
@@ -34,7 +36,7 @@ stm = function(X,K,init = 'scd',init_loss = 'mkl',maxiter=100,tol=1e-3,
   p = dim(X)[2]
 
   res = init_stm(X,K,init,init_loss)
-  #inited = list(L_init = res$ql$El,F_init = res$qf$Ef)
+  inited = list(L_init = res$ql$El,F_init = res$qf$Ef)
 
   #EZ = array(dim = c(n,p,K))
 
@@ -170,7 +172,6 @@ stm = function(X,K,init = 'scd',init_loss = 'mkl',maxiter=100,tol=1e-3,
 #'@param K number of topics
 #'@param init init methods, or a list of init L and F
 #'@param init_loss mkl or mse
-#'@export
 init_stm = function(X,K,init,init_loss){
 
   if(is.list(init)){

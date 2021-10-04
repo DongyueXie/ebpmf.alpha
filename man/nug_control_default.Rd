@@ -6,6 +6,9 @@
 \usage{
 nug_control_default()
 }
+\arguments{
+\item{filter.number, family}{wavelet basis, see wavethresh pakcage for more details.}
+}
 \description{
 Default parameters of smash gen
 }

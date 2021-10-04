@@ -4,7 +4,7 @@
 \alias{NMF_HALS}
 \title{HALS algorithm for NMF}
 \usage{
-NMF_HALS(X, k, smooth_u = F, smooth_v = T, ord = 1,
+NMF_HALS(X, K, smooth_u = F, smooth_v = T, ord = 1,
   smooth_method = "trendfiltering", filter.number = 1,
   family = "DaubExPhase", pos_u, pos_v, maxiter = 100,
   printevery = 10, tol = 0.01)
@@ -12,11 +12,11 @@ NMF_HALS(X, k, smooth_u = F, smooth_v = T, ord = 1,
 \arguments{
 \item{X}{N by p matrix}
 
-\item{k}{number of topics}
-
 \item{smooth_method}{'trendfiltering', 'wavelet' or 'runmed'}
 
 \item{pos_u, pos_v}{position of observations}
+
+\item{k}{number of topics}
 }
 \description{
 HALS algorithm for NMF
