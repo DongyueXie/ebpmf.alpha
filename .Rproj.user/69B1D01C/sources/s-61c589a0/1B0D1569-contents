@@ -165,7 +165,7 @@ stm = function(X,K,init = 'scd',init_loss = 'mkl',maxiter=100,tol=1e-3,
 
 }
 
-#'@description initialize the stm model
+#'@title initialize the stm model
 #'@param X input data matrix
 #'@param K number of topics
 #'@param init init methods, or a list of init L and F

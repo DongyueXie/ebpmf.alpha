@@ -17,7 +17,7 @@ smash.gen.poiss(x, nugget = NULL, s = 1, transformation = "vst",
 
 \item{s}{Scale factor for Poisson observations: y~Pois(scale*lambda), can be a vector.}
 
-\item{transformation}{transformation of Poisson data, either 'vst' or 'lik_expansion'}
+\item{transformation}{transformation of Poisson data, either 'vst' or 'lik_expansion'; 'vst' for varaince stablizing transformation; 'lik_expansion' for likelihood expansion}
 
 \item{method}{smoothing method for Gaussian sequence, either 'smash' or 'ti.thresh'. When n is large, ti.thresh is much faster}
 
@@ -38,7 +38,7 @@ smash.gen.poiss(x, nugget = NULL, s = 1, transformation = "vst",
 \item{tol}{tolerance to stop iterations.}
 }
 \value{
-estimated smoothed \lambda, estimated nugget effect.
+estimated smoothed lambda, estimated nugget effect.
 }
 \description{
 Smooth Poisson sequence, accounting for nugget effect

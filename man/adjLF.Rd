@@ -14,6 +14,3 @@ adjLF(L, FF)
 \description{
 Make Init L and F on similar scale
 }
-\details{
-LF = L \times S_l^{-1} \times S_l \times S_f \times S_f^{-1} \times F
-}

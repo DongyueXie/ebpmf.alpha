@@ -5,15 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "0",
+    "hash" : "2090654151",
     "id" : "1B0D1569",
-    "lastKnownWriteTime" : 1633366638,
-    "last_content_update" : 1633366638327,
+    "lastKnownWriteTime" : 1633457811,
+    "last_content_update" : 1633457811948,
     "path" : "~/stm/R/stm.R",
     "project_path" : "R/stm.R",
     "properties" : {
-        "cursorPosition" : "0,46",
-        "scrollLine" : "0"
+        "cursorPosition" : "167,8",
+        "scrollLine" : "163"
     },
     "relative_order" : 4,
     "source_on_save" : false,
