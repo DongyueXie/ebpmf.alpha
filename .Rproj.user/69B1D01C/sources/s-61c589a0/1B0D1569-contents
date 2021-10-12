@@ -1,4 +1,5 @@
 #'@title Smoothed Poisson Matrix Factorization
+#'@description Smoothed Poisson Matrix Factorization/ smoothed topic model
 #'@param X count matrix
 #'@param K number of factors/ranks
 #'@param init initialization methods, 'lee','scd' from package NNLM, or 'uniform' randomly initialize; or provide init as a list with L_init and F_init.

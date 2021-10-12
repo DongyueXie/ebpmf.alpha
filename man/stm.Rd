@@ -42,5 +42,5 @@ stm(X, K, init = "scd", init_loss = "mkl", maxiter = 100,
 EL,EF: posterior of loadings and factors
 }
 \description{
-Smoothed Poisson Matrix Factorization
+Smoothed Poisson Matrix Factorization/ smoothed topic model
 }

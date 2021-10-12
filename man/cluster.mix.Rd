@@ -4,7 +4,8 @@
 \alias{cluster.mix}
 \title{Xing's smoothed topic model}
 \usage{
-cluster.mix(y, smooth = TRUE, pi0 = NULL, phi0 = NULL, K, tol, maxit)
+cluster.mix(y, smooth = TRUE, pi0 = NULL, phi0 = NULL, K, tol, maxit,
+  nugget = FALSE, nug_control = list())
 }
 \description{
 Xing's smoothed topic model
