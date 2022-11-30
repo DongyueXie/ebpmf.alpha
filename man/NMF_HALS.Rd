@@ -4,10 +4,21 @@
 \alias{NMF_HALS}
 \title{HALS algorithm for NMF}
 \usage{
-NMF_HALS(X, K, smooth_u = F, smooth_v = T, ord = 1,
-  smooth_method = "trendfiltering", filter.number = 1,
-  family = "DaubExPhase", pos_u, pos_v, maxiter = 100,
-  printevery = 10, tol = 0.01)
+NMF_HALS(
+  X,
+  K,
+  smooth_u = F,
+  smooth_v = T,
+  ord = 1,
+  smooth_method = "trendfiltering",
+  filter.number = 1,
+  family = "DaubExPhase",
+  pos_u,
+  pos_v,
+  maxiter = 100,
+  printevery = 10,
+  tol = 0.01
+)
 }
 \arguments{
 \item{X}{N by p matrix}

@@ -4,11 +4,22 @@
 \alias{smash.gen.poiss}
 \title{Smooth Poisson sequence, accounting for nugget effect}
 \usage{
-smash.gen.poiss(x, nugget = NULL, s = 1, transformation = "vst",
-  method = "ti.thresh", robust = T, robust.q = 0.99,
-  nug.init = NULL, ash.pm = FALSE, eps = "estimate",
-  filter.number = 1, family = "DaubExPhase", maxiter = 10,
-  tol = 0.01)
+smash.gen.poiss(
+  x,
+  nugget = NULL,
+  s = 1,
+  transformation = "vst",
+  method = "ti.thresh",
+  robust = T,
+  robust.q = 0.99,
+  nug.init = NULL,
+  ash.pm = FALSE,
+  eps = "estimate",
+  filter.number = 1,
+  family = "DaubExPhase",
+  maxiter = 10,
+  tol = 0.01
+)
 }
 \arguments{
 \item{x}{observed Poisson sequence}

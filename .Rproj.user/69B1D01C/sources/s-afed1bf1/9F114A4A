@@ -1,0 +1,26 @@
+{
+    "id": "9F114A4A",
+    "path": "~/Rpackages/stm/R/stm.R",
+    "project_path": "R/stm.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1669848061334.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "31,47",
+        "scrollLine": "115"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1669848080,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1669848080330,
+    "read_only": false,
+    "read_only_alternatives": []
+}

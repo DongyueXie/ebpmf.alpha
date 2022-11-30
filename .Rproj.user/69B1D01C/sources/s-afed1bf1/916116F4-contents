@@ -38,3 +38,21 @@ ploter = function(EF,main){
 
 ploter(t(fit.sgom$phi),main='sgom')
 
+
+
+X_init_fit = nnmf(y,3,method='lee',
+                        loss='mse',show.warning = F,
+                        init = list(H=t(FF)),
+                        verbose = F,max.iter = 50)
+
+plot(X_init_fit$H[1,])
+plot(X_init_fit$H[2,])
+plot(X_init_fit$H[3,])
+
+plot(X_init_fit$W[,1])
+plot(X_init_fit$W[,2])
+plot(X_init_fit$W[,3]/sum(X_init_fit$W[,3]))
+
+plot(L[,3]/sum(L[,3]))
+
+out = stm(y,K=3,init='lee')

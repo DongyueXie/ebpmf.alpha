@@ -6,6 +6,7 @@
 #'@param init_loss loss function of the initialization method, either mkl or mse.
 #'@param maxiter maximum iterations
 #'@param tol stop criteria
+#'@param fix_F if TRUE, F will no be updated.
 #'@param bmsm_control control parameters of BMSM, see bmsm_control_default()
 #'@param ebpm_method point_gamma or two_gamma
 #'@param ebpm_control control parameters of ebpm, see ebpm_control_default()
@@ -20,9 +21,11 @@
 #'@import Matrix
 #'@export
 
-stm = function(X,K,init = 'scd',init_loss = 'mkl',maxiter=100,tol=1e-3,
+stm = function(X,K,
+               init = 'scd',init_loss = 'mkl',maxiter=100,tol=1e-3,
+               fix_F = FALSE,
                   bmsm_control_l=list(), bmsm_control_f=list(),
-                  nug_control_l=list(), nug_control_f=list(),
+                  nug_control_l=list(), nug_control_f=otlist(),
                   #filter.number = 1,family = "DaubExPhase",
                   ebpm_method='point_gamma',
                   ebpm_control_l=list(), ebpm_control_f=list(),
@@ -35,6 +38,9 @@ stm = function(X,K,init = 'scd',init_loss = 'mkl',maxiter=100,tol=1e-3,
   p = dim(X)[2]
 
   res = init_stm(X,K,init,init_loss)
+  plot(res$ql$El[,1])
+  plot(res$ql$El[,2])
+  plot(res$ql$El[,3])
   #inited = list(L_init = res$ql$El,F_init = res$qf$Ef)
 
   #EZ = array(dim = c(n,p,K))
@@ -98,23 +104,25 @@ stm = function(X,K,init = 'scd',init_loss = 'mkl',maxiter=100,tol=1e-3,
 
       # Update F
 
-      f_seq = colSums(EZ_k)
-      f_scale = sum(res$ql$El[,k])
+      if(!fix_F){
+        f_seq = colSums(EZ_k)
+        f_scale = sum(res$ql$El[,k])
 
-      if(smooth_f){
-        fk_hat = update_smooth(f_seq, f_scale,nugget,bmsm_control_f,nug_control_f)
-        res$qf$Ef[,k] = fk_hat$E
-        res$qf$Elogf[,k] = fk_hat$Elog
-        #loglikR = loglikR + fk_hat$loglik
-        res$nugget_f[k] = fk_hat$nugget
-        res$gf[[k]] = fk_hat$pi_weight
+        if(smooth_f){
+          fk_hat = update_smooth(f_seq, f_scale,nugget,bmsm_control_f,nug_control_f)
+          res$qf$Ef[,k] = fk_hat$E
+          res$qf$Elogf[,k] = fk_hat$Elog
+          #loglikR = loglikR + fk_hat$loglik
+          res$nugget_f[k] = fk_hat$nugget
+          res$gf[[k]] = fk_hat$pi_weight
 
-      }else{
-        fk_hat = update_nsmooth(f_seq,f_scale,ebpm_control_f,ebpm_method)
-        res$qf$Ef[,k] = fk_hat$posterior$mean
-        res$qf$Elogf[,k] = fk_hat$posterior$mean_log
-        #loglikR = loglikR + fk_hat$log_likelihood
-        res$gf[[k]] = fk_hat$fitted_g
+        }else{
+          fk_hat = update_nsmooth(f_seq,f_scale,ebpm_control_f,ebpm_method)
+          res$qf$Ef[,k] = fk_hat$posterior$mean
+          res$qf$Elogf[,k] = fk_hat$posterior$mean_log
+          #loglikR = loglikR + fk_hat$log_likelihood
+          res$gf[[k]] = fk_hat$fitted_g
+        }
       }
 
       b_k_new = res$ql$Elogl[X_idx$i,k] + res$qf$Elogf[X_idx$j, k] - res$a
@@ -178,23 +186,44 @@ init_stm = function(X,K,init,init_loss){
     L_init = init$L_init
     F_init = init$F_init
 
+    if(is.null(L_init)){
+      X_init_fit = NNLM::nnmf(as.matrix(X),K,method='lee',
+                              loss='mse',show.warning = F,
+                              init = list(H=t(F_init)),
+                              verbose = F,max.iter = 50)
+      L_init = X_init_fit$W
+    }
+
   }else{
-    if(init == 'scd'){
-      X_init_fit = NNLM::nnmf(as.matrix(X),K,method='scd',loss=init_loss,show.warning = F,verbose = F,max.iter = 50)
+
+    if(init%in%c('scd','lee')){
+      X_init_fit = NNLM::nnmf(as.matrix(X),K,method=init,loss=init_loss,show.warning = F,verbose = F,max.iter = 50)
       L_init = X_init_fit$W
       F_init = t(X_init_fit$H)
     }
-    if(init == 'lee'){
-      X_init_fit = NNLM::nnmf(as.matrix(X),K,method='lee',loss=init_loss,show.warning = F,verbose = F,max.iter = 100)
-      L_init = X_init_fit$W
-      F_init = t(X_init_fit$H)
-    }
+
+    # if(init == 'scd'){
+    #   X_init_fit = NNLM::nnmf(as.matrix(X),K,method='scd',loss=init_loss,show.warning = F,verbose = F,max.iter = 50)
+    #   L_init = X_init_fit$W
+    #   F_init = t(X_init_fit$H)
+    # }
+    # if(init == 'lee'){
+    #   X_init_fit = NNLM::nnmf(as.matrix(X),K,method='lee',loss=init_loss,show.warning = F,verbose = F,max.iter = 100)
+    #   L_init = X_init_fit$W
+    #   F_init = t(X_init_fit$H)
+    # }
     if(init == 'uniform'){
       L_init = matrix(runif(n*K),nrow=n,ncol=K)
       F_init = matrix(runif(K*p),nrow=p,ncol=K)
       ratio = median(X)/(median(L_init)*median(F_init))
       L_init = L_init*sqrt(ratio)
       F_init = F_init*sqrt(ratio)
+    }
+    if(init == 'kmeans'){
+      kmeans.init=kmeans(as.matrix(X),K,nstart=5)
+      L_init = rep(1,n)%o%normalize(as.vector(table(kmeans.init$cluster)))
+      F_init = t(kmeans.init$centers)
+      row.names(F_init)=NULL
     }
   }
 

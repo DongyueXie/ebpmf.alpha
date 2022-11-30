@@ -4,12 +4,26 @@
 \alias{stm}
 \title{Smoothed Poisson Matrix Factorization}
 \usage{
-stm(X, K, init = "scd", init_loss = "mkl", maxiter = 100,
-  tol = 0.001, bmsm_control_l = list(), bmsm_control_f = list(),
-  nug_control_l = list(), nug_control_f = list(),
-  ebpm_method = "point_gamma", ebpm_control_l = list(),
-  ebpm_control_f = list(), smooth_f = TRUE, smooth_l = FALSE,
-  nugget = FALSE, printevery = 10)
+stm(
+  X,
+  K,
+  init = "scd",
+  init_loss = "mkl",
+  maxiter = 100,
+  tol = 0.001,
+  fix_F = FALSE,
+  bmsm_control_l = list(),
+  bmsm_control_f = list(),
+  nug_control_l = list(),
+  nug_control_f = list(),
+  ebpm_method = "point_gamma",
+  ebpm_control_l = list(),
+  ebpm_control_f = list(),
+  smooth_f = TRUE,
+  smooth_l = FALSE,
+  nugget = FALSE,
+  printevery = 10
+)
 }
 \arguments{
 \item{X}{count matrix}
@@ -23,6 +37,8 @@ stm(X, K, init = "scd", init_loss = "mkl", maxiter = 100,
 \item{maxiter}{maximum iterations}
 
 \item{tol}{stop criteria}
+
+\item{fix_F}{if TRUE, F will no be updated.}
 
 \item{ebpm_method}{point_gamma or two_gamma}
 

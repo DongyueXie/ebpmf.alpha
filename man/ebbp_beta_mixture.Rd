@@ -4,9 +4,17 @@
 \alias{ebbp_beta_mixture}
 \title{Empirical Bayes for estimating Binomial probability}
 \usage{
-ebbp_beta_mixture(x, nx, shape = NULL, point_mass = TRUE,
-  nullweight = 10, weight = rep(1, length(x)), g_init = NULL,
-  fix_g = FALSE, control = NULL)
+ebbp_beta_mixture(
+  x,
+  nx,
+  shape = NULL,
+  point_mass = TRUE,
+  nullweight = 10,
+  weight = rep(1, length(x)),
+  g_init = NULL,
+  fix_g = FALSE,
+  control = NULL
+)
 }
 \arguments{
 \item{x:}{a vector of the number of successes}

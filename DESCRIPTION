@@ -8,4 +8,4 @@ Description: Empirical Bayes Multiscale Poisson Matrix Factorization.
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
