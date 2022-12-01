@@ -5,7 +5,8 @@
 #'@param pos_u,pos_v position of observations
 #'@export
 #'@import wavethresh
-#'@import genlasso
+
+#import genlasso. The igraph package fail to load.
 
 NMF_HALS = function(X,K,smooth_u=F,smooth_v=T,ord=1,
                     smooth_method='trendfiltering',
