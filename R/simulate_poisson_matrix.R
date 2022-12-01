@@ -47,7 +47,7 @@ sim_data_log = function(n,p,K=3,d=NULL,
     Factor[,,i] = FF
     Loading[,,i] = L
     Lambda = S0*exp(tcrossprod(L,FF)+matrix(rnorm(n*p,0,sqrt(var_e)),nrow=n,ncol=p))
-    Y[,,i] = matrix(rpois(n*p,Lambda),nrow=N,ncol=p)
+    Y[,,i] = matrix(rpois(n*p,Lambda),nrow=n,ncol=p)
 
   }
 
