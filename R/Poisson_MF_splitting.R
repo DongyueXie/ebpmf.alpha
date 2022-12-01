@@ -5,6 +5,7 @@
 #'@param est_sigma2 whether estimate the variance term or fix it
 #'@return fitted object
 #'@importFrom flashr flash
+#'@importFrom flashr flash_set_data
 #'@export
 splitting_PMF = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
                          Kmax=10,var_type='by_row',

@@ -16,14 +16,14 @@ simu_study_PMF = function(simdata,n_cores = 1,method_list=c('flash','splitting')
     mse_log = NULL
     k_hat = NULL
     if(class(fitted_model$flash)!='try-error'){
-      mse_log = c(mse_log,mse(fitted_model$flash$fitted_values,tcrossprod(simdata$Loading[,,i],simdata$Factor[,,i])))
+      mse_log = c(mse_log,rmse(fitted_model$flash$fitted_values,tcrossprod(simdata$Loading[,,i],simdata$Factor[,,i])))
       k_hat = c(k_hat,fitted_model$flash$nfactors)
     }else{
       mse_log = c(mse_log,NA)
       k_hat = c(k_hat,NA)
     }
     if(class(fitted_model$splitting)!='try-error'){
-      mse_log = c(mse_log,mse(fitted_model$splitting$fit_flash$fitted_values,tcrossprod(simdata$Loading[,,i],simdata$Factor[,,i])))
+      mse_log = c(mse_log,rmse(fitted_model$splitting$fit_flash$fitted_values,tcrossprod(simdata$Loading[,,i],simdata$Factor[,,i])))
       k_hat = c(k_hat,fitted_model$splitting$fit_flash$nfactors)
     }else{
       mse_log = c(mse_log,NA)
@@ -33,7 +33,7 @@ simu_study_PMF = function(simdata,n_cores = 1,method_list=c('flash','splitting')
     names(k_hat) = c('flash','splitting')
 
     return(list(fitted_model = fitted_model,
-                mse_log=mse_log,
+                rmse_log=mse_log,
                 k_hat=k_hat))
 
   },mc.cores = n_cores)

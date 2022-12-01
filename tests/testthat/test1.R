@@ -20,3 +20,4 @@ fit = splitting_PMF(Y,S0)
 
 
 simdata= sim_data_log(n=100,p=100,K=3,n_simu = 2)
+res = simu_study_PMF(simdata)
