@@ -1,4 +1,5 @@
 #'@title a simulation study function
+#'@importFrom parallel mclapply
 #'@export
 simu_study_PMF = function(simdata,n_cores = 1,method_list=c('flash','splitting'),Kmax=10,var_type='by_row'){
   n_simu = simdata$params$n_simu

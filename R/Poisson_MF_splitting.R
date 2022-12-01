@@ -5,7 +5,6 @@
 #'@param est_sigma2 whether estimate the variance term or fix it
 #'@return fitted object
 #'@importFrom flashr flash
-#'@importFrom vebpm vga_pois_solver
 #'@export
 splitting_PMF = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
                          Kmax=10,var_type='by_row',
@@ -117,6 +116,7 @@ calc_ER2 = function(Y,f){
 }
 
 #'@title a matrix version of the solver
+#'@importFrom vebpm vga_pois_solver
 vga_pois_solver_mat = function(init_Val,X,S,Beta,Sigma2,maxiter=1000,tol=1e-8){
 
   n = nrow(X)
