@@ -1,7 +1,10 @@
 #'@title a simulation study function
 #'@importFrom parallel mclapply
 #'@export
-simu_study_PMF = function(simdata,n_cores = 1,method_list=c('flash','splitting'),Kmax=10,var_type='by_row'){
+simu_study_PMF = function(simdata,n_cores = 1,
+                          method_list=c('flash','splitting'),
+                          Kmax=10,var_type='by_row',
+                          maxiter=1000,tol=0.1){
   n_simu = simdata$params$n_simu
   n_method = length(method_list)
   res = mclapply(1:n_simu,function(i){
@@ -11,7 +14,7 @@ simu_study_PMF = function(simdata,n_cores = 1,method_list=c('flash','splitting')
     names(fitted_model) <- method_list
     S0 = tcrossprod(simdata$L0[,i],simdata$F0[,i])
     fitted_model$flash = try(flash(log(1+simdata$Y[,,i]/S0),Kmax = Kmax,var_type=var_type,verbose = F))
-    fitted_model$splitting = try(splitting_PMF(simdata$Y[,,i],S0,Kmax=Kmax,var_type=var_type))
+    fitted_model$splitting = try(splitting_PMF(simdata$Y[,,i],S0,Kmax=Kmax,var_type=var_type,maxiter=maxiter,tol=tol))
 
     mse_log = NULL
     k_hat = NULL
