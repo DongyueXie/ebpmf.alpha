@@ -42,7 +42,9 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
       M0 = matrix(init_val$posterior$mean_log,nrow=n,ncol=p)
     }
     if(var_type=='by_row'){
-      cat('Solving VGA for row 1...')
+      if(verbose){
+        cat('Solving VGA for row 1...')
+      }
       init_val = lapply(1:n,function(i){
         if(verbose){
           if(i%%printevery==0){
