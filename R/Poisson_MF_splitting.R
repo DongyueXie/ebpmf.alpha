@@ -5,6 +5,7 @@
 #'@param est_sigma2 whether estimate the variance term or fix it
 #'@return fitted object
 #'@import flashier
+#'@import magrittr
 #'@importFrom vebpm pois_mean_GG
 #'@export
 splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
@@ -12,7 +13,10 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
                          M_init = NULL,
                          maxiter=100,tol=0.1,
                          verbose_flash=0,
-                         printevery=10){
+                         printevery=10,
+                         verbose=FALSE){
+
+  start_time = Sys.time()
 
   n = nrow(Y)
   p = ncol(Y)
@@ -25,21 +29,39 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
   }
 
   if(is.null(sigma2)|is.null(M_init)){
+    if(verbose){
+      cat('Initializing...')
+    }
     # pre-estimate sigma2, assuming LF = 0?.
     if(var_type=='constant'){
+      if(verbose){
+        cat('Solving VGA...')
+      }
       init_val = pois_mean_GG(as.vector(Y),as.vector(S),prior_mean = 0,prior_var = NULL,tol=1e-3)
       sigma2_init = init_val$fitted_g$var
       M0 = matrix(init_val$posterior$mean_log,nrow=n,ncol=p)
     }
     if(var_type=='by_row'){
+      cat('Solving VGA for row 1...')
       init_val = lapply(1:n,function(i){
+        if(verbose){
+          if(i%%printevery==0){
+            cat(paste(i,'...'))
+          }
+        }
         return(pois_mean_GG(Y[i,],S[i,],prior_mean = 0,prior_var = NULL,tol=1e-3))
       })
       sigma2_init = unlist(lapply(init_val,function(fit){fit$fitted_g$var}))
       M0 = do.call(rbind,lapply(init_val,function(fit){fit$posterior$mean_log}))
     }
     if(var_type=='by_col'){
+      cat('Solving VGA for column 1...')
       init_val = lapply(1:p,function(i){
+        if(verbose){
+          if(i%%printevery==0){
+            cat(paste(i,'...'))
+          }
+        }
         return(pois_mean_GG(Y[,i],S[,i],prior_mean = 0,prior_var = NULL,tol=1e-3))
       })
       sigma2_init = unlist(lapply(init_val,function(fit){fit$fitted_g$var}))
@@ -54,7 +76,7 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
   if(is.null(M_init)){
     M = M0
     rm(M0)
-    rm(init_val)
+    #rm(init_val)
   }else{
     M = M_init
   }
@@ -71,6 +93,10 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
     stop('Non-supported var type')
   }
 
+  if(verbose){
+    cat('running initial flash greedy + backfitting')
+    cat('\n')
+  }
   fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
     flash.add.greedy(Kmax = Kmax,verbose = verbose_flash) %>%
     flash.backfit(verbose = verbose_flash) %>%
@@ -80,8 +106,11 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
   V = matrix(1/n,nrow=n,ncol=p)
   obj = calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)
 
-  start_time = Sys.time()
 
+
+  if(verbose){
+    print('Running iterations...')
+  }
   for(iter in 1:maxiter){
 
     res = vga_pois_solver_mat(M,Y,S,fitted(fit_flash),adjust_var_shape(sigma2,var_type,n,p))
@@ -128,15 +157,19 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
       break
     }
 
-    if(iter%%printevery==0){
-      print(paste('At iter',iter, 'ELBO=',obj[iter+1]))
+    if(verbose){
+      if(iter%%printevery==0){
+        print(paste('At iter ',iter, ', ELBO=',round(obj[iter+1],log10(1/tol)),sep = ''))
+      }
     }
+
 
   }
 
   end_time = Sys.time()
   return(list(fit_flash=fit_flash,elbo=obj[length(obj)],eblo_trace=obj,
-              sigma2 = sigma2,run_time = difftime(end_time,start_time,units='auto'),M=M,V=V))
+              sigma2 = sigma2,run_time = difftime(end_time,start_time,units='auto'),
+              M=M,V=V,init_val=init_val))
 }
 
 

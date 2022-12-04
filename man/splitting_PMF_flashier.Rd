@@ -15,7 +15,8 @@ splitting_PMF_flashier(
   maxiter = 100,
   tol = 0.1,
   verbose_flash = 0,
-  printevery = 10
+  printevery = 10,
+  verbose = FALSE
 )
 }
 \arguments{

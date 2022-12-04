@@ -15,7 +15,7 @@ Lambda = S0*exp(tcrossprod(Ltrue,Ftrue))
 
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
-fit = splitting_PMF(Y,S0)
+fit = splitting_PMF_flashier(Y,S0,verbose=TRUE)
 
 
 
