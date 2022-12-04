@@ -19,5 +19,13 @@ fit = splitting_PMF(Y,S0)
 
 
 
-simdata= sim_data_log(n=100,p=100,K=3,n_simu = 2)
-res = simu_study_PMF(simdata)
+datax= sim_data_log(n=100,p=100,K=3,n_simu = 1)
+res = simu_study_PMF(datax)
+
+datax= sim_data_log(n=500,p=500,K=3,n_simu = 1)
+Y = datax$Y[,,1]
+S = tcrossprod(datax$L0[,1],datax$F0[,1])
+
+datax = sim_data_log_simple(500,400)
+Y = datax$Y
+S = tcrossprod(datax$l0,datax$f0)
