@@ -6,15 +6,17 @@
 #'@return fitted object
 #'@import flashier
 #'@import magrittr
+#'@importFrom parallel mclapply
 #'@importFrom vebpm pois_mean_GG
 #'@export
 splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
-                         Kmax=10,var_type='by_row',
+                         Kmax=10,var_type='by_col',
                          M_init = NULL,
                          maxiter=100,tol=0.1,
                          verbose_flash=0,
                          printevery=10,
-                         verbose=FALSE){
+                         verbose=FALSE,
+                         n_cores = 1){
 
   start_time = Sys.time()
 
@@ -45,27 +47,29 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
       if(verbose){
         cat('Solving VGA for row 1...')
       }
-      init_val = lapply(1:n,function(i){
+      init_val = mclapply(1:n,function(i){
         if(verbose){
           if(i%%printevery==0){
             cat(paste(i,'...'))
           }
         }
         return(pois_mean_GG(Y[i,],S[i,],prior_mean = 0,prior_var = NULL,tol=1e-3))
-      })
+      },mc.cores = n_cores)
       sigma2_init = unlist(lapply(init_val,function(fit){fit$fitted_g$var}))
       M0 = do.call(rbind,lapply(init_val,function(fit){fit$posterior$mean_log}))
     }
     if(var_type=='by_col'){
-      cat('Solving VGA for column 1...')
-      init_val = lapply(1:p,function(i){
+      if(verbose){
+        cat('Solving VGA for column 1...')
+      }
+      init_val = mclapply(1:p,function(i){
         if(verbose){
           if(i%%printevery==0){
             cat(paste(i,'...'))
           }
         }
         return(pois_mean_GG(Y[,i],S[,i],prior_mean = 0,prior_var = NULL,tol=1e-3))
-      })
+      },mc.cores = n_cores)
       sigma2_init = unlist(lapply(init_val,function(fit){fit$fitted_g$var}))
       M0 = do.call(cbind,lapply(init_val,function(fit){fit$posterior$mean_log}))
     }
@@ -104,9 +108,11 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
     flash.backfit(verbose = verbose_flash) %>%
     flash.nullcheck(verbose = verbose_flash)
 
-  KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
+  ##KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
   V = matrix(1/n,nrow=n,ncol=p)
-  obj = calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)
+  #obj = calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)
+
+  obj = -Inf
 
 
 

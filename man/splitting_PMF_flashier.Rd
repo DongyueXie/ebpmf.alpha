@@ -10,13 +10,14 @@ splitting_PMF_flashier(
   sigma2 = NULL,
   est_sigma2 = TRUE,
   Kmax = 10,
-  var_type = "by_row",
+  var_type = "by_col",
   M_init = NULL,
   maxiter = 100,
   tol = 0.1,
   verbose_flash = 0,
   printevery = 10,
-  verbose = FALSE
+  verbose = FALSE,
+  n_cores = 1
 )
 }
 \arguments{
