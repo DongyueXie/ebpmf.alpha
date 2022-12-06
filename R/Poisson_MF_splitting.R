@@ -13,6 +13,7 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
                          Kmax=10,var_type='by_col',
                          M_init = NULL,
                          maxiter=100,tol=0.1,
+                         maxiter_backfitting = 10,
                          verbose_flash=0,
                          printevery=10,
                          verbose=FALSE,
@@ -53,10 +54,11 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
             cat(paste(i,'...'))
           }
         }
-        return(pois_mean_GG(Y[i,],S[i,],prior_mean = 0,prior_var = NULL,tol=1e-3))
+        fit = pois_mean_GG(Y[i,],S[i,],prior_mean = 0,prior_var = NULL,tol=1e-3)
+        return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
       },mc.cores = n_cores)
-      sigma2_init = unlist(lapply(init_val,function(fit){fit$fitted_g$var}))
-      M0 = do.call(rbind,lapply(init_val,function(fit){fit$posterior$mean_log}))
+      sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
+      M0 = do.call(rbind,lapply(init_val,function(fit){fit$mean_log}))
     }
     if(var_type=='by_col'){
       if(verbose){
@@ -68,21 +70,24 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
             cat(paste(i,'...'))
           }
         }
-        return(pois_mean_GG(Y[,i],S[,i],prior_mean = 0,prior_var = NULL,tol=1e-3))
+        fit = pois_mean_GG(Y[,i],S[,i],prior_mean = 0,prior_var = NULL,tol=1e-3)
+        return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
       },mc.cores = n_cores)
-      sigma2_init = unlist(lapply(init_val,function(fit){fit$fitted_g$var}))
-      M0 = do.call(cbind,lapply(init_val,function(fit){fit$posterior$mean_log}))
+      sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
+      M0 = do.call(cbind,lapply(init_val,function(fit){fit$mean_log}))
     }
   }
+  init_val = list()
   if(is.null(sigma2)){
     sigma2 = sigma2_init
     est_sigma2 = TRUE
+    init_val$sigma2_init = sigma2_init
     rm(sigma2_init)
   }
   if(is.null(M_init)){
     M = M0
+    init_val$M_init = M0
     rm(M0)
-    #rm(init_val)
   }else{
     M = M_init
   }
@@ -143,7 +148,7 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
     fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
       flash.init.factors(init = fit_flash) %>%
       flash.add.greedy(Kmax = Kmax,verbose = verbose_flash) %>%
-      flash.backfit(verbose = verbose_flash) %>%
+      flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
       flash.nullcheck(verbose = verbose_flash)
 
     # fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%

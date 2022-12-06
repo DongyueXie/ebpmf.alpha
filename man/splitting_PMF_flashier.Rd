@@ -14,6 +14,7 @@ splitting_PMF_flashier(
   M_init = NULL,
   maxiter = 100,
   tol = 0.1,
+  maxiter_backfitting = 10,
   verbose_flash = 0,
   printevery = 10,
   verbose = FALSE,
