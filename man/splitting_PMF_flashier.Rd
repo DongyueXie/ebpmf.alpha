@@ -12,13 +12,16 @@ splitting_PMF_flashier(
   Kmax = 10,
   var_type = "by_col",
   M_init = NULL,
-  maxiter = 100,
+  maxiter = 1000,
   tol = 0.1,
   maxiter_backfitting = 10,
   verbose_flash = 0,
   printevery = 10,
   verbose = FALSE,
-  n_cores = 1
+  n_cores = 1,
+  save_fit_every = Inf,
+  save_fit_path = NULL,
+  save_fit_name = NULL
 )
 }
 \arguments{

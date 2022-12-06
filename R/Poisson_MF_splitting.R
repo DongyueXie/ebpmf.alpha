@@ -12,12 +12,15 @@
 splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
                          Kmax=10,var_type='by_col',
                          M_init = NULL,
-                         maxiter=100,tol=0.1,
+                         maxiter=1000,tol=0.1,
                          maxiter_backfitting = 10,
                          verbose_flash=0,
                          printevery=10,
                          verbose=FALSE,
-                         n_cores = 1){
+                         n_cores = 1,
+                         save_fit_every = Inf,
+                         save_fit_path = NULL,
+                         save_fit_name = NULL){
 
   start_time = Sys.time()
 
@@ -215,6 +218,27 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
       if(iter%%printevery==0){
         print(paste('At iter ',iter, ', ELBO=',round(obj[iter+1],log10(1/tol)),sep = ''))
       }
+    }
+
+    # save fitted values because the total running time could be very long
+
+    if(iter%%save_fit_every==0){
+      saveRDS(list(fit_flash=fit_flash,
+                   elbo=obj[length(obj)],
+                   K_trace=K_trace,
+                   eblo_trace=obj,
+                   sigma2 = sigma2,
+                   run_time = difftime(Sys.time(),start_time,units='auto'),
+                   M=M,V=V,
+                   init_val=init_val,
+                   run_time_break_down = list(run_time_vga_init = run_time_vga_init,
+                                              run_time_vga = run_time_vga,
+                                              run_time_flash_init = run_time_flash_init,
+                                              run_time_flash_init_factor = run_time_flash_init_factor,
+                                              run_time_flash_greedy = run_time_flash_greedy,
+                                              run_time_flash_backfitting = run_time_flash_backfitting,
+                                              run_time_flash_nullcheck = run_time_flash_nullcheck)),
+              file=paste(save_fit_path,save_fit_name,'_fit_iter',iter,'.rds',sep=''))
     }
 
 
