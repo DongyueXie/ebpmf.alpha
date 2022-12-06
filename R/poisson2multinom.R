@@ -4,7 +4,7 @@
 #'@export
 #'
 
-poisson2multinom <- function (FF, L) {
+poisson_to_multinom <- function (FF, L) {
   L <- t(t(L) * colSums(FF))
   s <- rowSums(L)
   L <- L / s
