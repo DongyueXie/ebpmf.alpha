@@ -77,6 +77,7 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
       M0 = do.call(cbind,lapply(init_val,function(fit){fit$mean_log}))
     }
   }
+  run_time_vga_init = difftime(Sys.time(),start_time,units = 'secs')
   init_val = list()
   if(is.null(sigma2)){
     sigma2 = sigma2_init
@@ -113,10 +114,11 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
     flash.backfit(verbose = verbose_flash) %>%
     flash.nullcheck(verbose = verbose_flash)
 
-  ##KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
-  V = matrix(1/n,nrow=n,ncol=p)
-  #obj = calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)
+  # KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
+  # V = matrix(1/n,nrow=n,ncol=p)
+  # obj = calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)
 
+  K_trace = fit_flash$n.factors
   obj = -Inf
 
 
@@ -124,11 +126,23 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
   if(verbose){
     print('Running iterations...')
   }
+
+  run_time_vga = c()
+  run_time_flash_init = c()
+  run_time_flash_init_factor = c()
+  run_time_flash_greedy = c()
+  run_time_flash_backfitting = c()
+  run_time_flash_nullcheck = c()
+
+
   for(iter in 1:maxiter){
 
+    t0 = Sys.time()
     res = vga_pois_solver_mat(M,Y,S,fitted(fit_flash),adjust_var_shape(sigma2,var_type,n,p))
     M = res$M
     V = res$V
+    t1 = Sys.time()
+    run_time_vga[iter] = difftime(t1,t0,units='secs')
     #print(paste('After vga,elbo is',calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)))
 
     # update sigma2
@@ -145,11 +159,38 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
     }
     #print(paste('After sigma2,elbo is',calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)))
     ## solve flash
-    fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
-      flash.init.factors(init = fit_flash) %>%
-      flash.add.greedy(Kmax = Kmax,verbose = verbose_flash) %>%
-      flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
-      flash.nullcheck(verbose = verbose_flash)
+
+    ## To timeing the operations, I seperate flash fits:
+
+    t0 = Sys.time()
+    fit_flash_new = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)
+    t1 = Sys.time()
+    run_time_flash_init[iter] = difftime(t1,t0,units='secs')
+
+    fit_flash = flash.init.factors(fit_flash_new,init = fit_flash)
+    t2 = Sys.time()
+    run_time_flash_init_factor[iter] = difftime(t2,t1,units='secs')
+
+    fit_flash = flash.add.greedy(fit_flash, Kmax = Kmax,verbose = verbose_flash)
+    t3 = Sys.time()
+    run_time_flash_greedy[iter] = difftime(t3,t2,units='secs')
+
+    fit_flash = flash.backfit(fit_flash, verbose = verbose_flash,maxiter = maxiter_backfitting)
+    t4 = Sys.time()
+    run_time_flash_backfitting[iter] = difftime(t4,t3,units='secs')
+
+    fit_flash = flash.nullcheck(fit_flash, verbose = verbose_flash)
+    t5 = Sys.time()
+    run_time_flash_nullcheck[iter] = difftime(t5,t4,units='secs')
+
+
+    # fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
+    #   flash.init.factors(init = fit_flash) %>%
+    #   flash.add.greedy(Kmax = Kmax,verbose = verbose_flash) %>%
+    #   flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
+    #   flash.nullcheck(verbose = verbose_flash)
+
+    K_trace[iter+1] = fit_flash$n.factors
 
     # fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
     #   flash.add.greedy(Kmax = Kmax,verbose = verbose_flash)
@@ -180,9 +221,21 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
   }
 
   end_time = Sys.time()
-  return(list(fit_flash=fit_flash,elbo=obj[length(obj)],eblo_trace=obj,
-              sigma2 = sigma2,run_time = difftime(end_time,start_time,units='auto'),
-              M=M,V=V,init_val=init_val))
+  return(list(fit_flash=fit_flash,
+              elbo=obj[length(obj)],
+              K_trace=K_trace,
+              eblo_trace=obj,
+              sigma2 = sigma2,
+              run_time = difftime(end_time,start_time,units='auto'),
+              M=M,V=V,
+              init_val=init_val,
+              run_time_break_down = list(run_time_vga_init = run_time_vga_init,
+                                         run_time_vga = run_time_vga,
+                                         run_time_flash_init = run_time_flash_init,
+                                         run_time_flash_init_factor = run_time_flash_init_factor,
+                                         run_time_flash_greedy = run_time_flash_greedy,
+                                         run_time_flash_backfitting = run_time_flash_backfitting,
+                                         run_time_flash_nullcheck = run_time_flash_nullcheck)))
 }
 
 
