@@ -12,7 +12,8 @@
 splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
                          Kmax=10,var_type='by_col',
                          M_init = NULL,
-                         maxiter=1000,tol=0.1,
+                         maxiter=100,
+                         tol=1e-5,
                          maxiter_backfitting = 10,
                          verbose_flash=0,
                          printevery=10,
@@ -26,6 +27,7 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
 
   n = nrow(Y)
   p = ncol(Y)
+  num_points = n*p
 
   if(is.null(S)){
     S = 1
@@ -207,7 +209,7 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
 
     # check convergence
     obj[iter + 1] = calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)
-    if((obj[iter+1] - obj[iter]) < tol){
+    if((obj[iter+1] - obj[iter])/num_points < tol){
       if((obj[iter+1] - obj[iter])<0){
         warning('An iteration decreases ELBO')
       }
