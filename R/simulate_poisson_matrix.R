@@ -62,22 +62,72 @@ sim_data_log = function(n,p,K=3,d=NULL,
 
 #'@title simulate simple Poisson matrix
 #'@export
-sim_data_log_simple = function(N,p){
-  K = 2
+sim_data_log_simple = function(N,p,K=2,l = 20,d=NULL,var_e = 0,phi=1.3){
+  if(is.null(d)){
+    d = rep(1,K)
+  }
+  p = max(p,K*l)
   Ftrue = matrix(0,nrow=p,ncol=K)
-  Ftrue[1:20,1] = 1
-  Ftrue[21:40,2] = 1
+  for(k in 1:K){
+    Ftrue[((k-1)*l+1):((k-1)*l+l),k] = 1
+  }
+
   Ltrue = matrix(rnorm(N*K), ncol=K)
+  Ltrue = Ltrue%*%diag(sqrt(d))
 
-  l0 = runif(N,1,2)
-  f0 = runif(p,1,2)
-  S0 = tcrossprod(l0,f0)
-
-  Lambda = S0*exp(tcrossprod(Ltrue,Ftrue))
-
+  Mu = tcrossprod(Ltrue,Ftrue)
+  if(!is.null(phi)){
+    var_e = calc_var_PLN_mat(Mu,phi)
+  }
+  Lambda = exp(Mu+matrix(rnorm(N*p,0,sqrt(var_e)),nrow=N,ncol=p))
   Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
-  return(list(Y=Y,l0=l0,f0=f0,Ftrue = Ftrue,Ltrue=Ltrue))
+  return(list(Y=Y,Ftrue = Ftrue,Ltrue=Ltrue,var_e = var_e))
 }
+
+#'@title simulate Poisson matrix based on real data output
+#'@export
+#'@importFrom Matrix Matrix
+#'@details The DGP is
+#'\deqn{Y\sim Poisson(S*\exp(LF'+E))}
+sim_data_real = function(S,L,FF,Sigma2,n_simu = 10,seed=12345){
+  set.seed(seed)
+  n = nrow(S)
+  p = ncol(S)
+  Y = list()
+  LF = tcrossprod(L,FF)
+  for(i in 1:n_simu){
+    Lambda = S*exp(LF+matrix(rnorm(n*p,0,sqrt(Sigma2)),nrow=n,ncol=p))
+    Y[[i]] = Matrix(matrix(rpois(n*p,Lambda),nrow=n,ncol=p),sparse = TRUE)
+  }
+  return(list(Y=Y,Factor=FF,Loading=L,n_simu=n_simu))
+}
+
+calc_var_PLN_mat = function(Mu,phi){
+  n = nrow(Mu)
+  p = ncol(Mu)
+  v = matrix(nrow=n,ncol=p)
+  for(i in 1:n){
+    for(j in 1:p){
+      v[i,j] = calc_var_PLN(Mu[i,j],phi)
+    }
+  }
+  return(v)
+}
+
+calc_var_PLN = function(mu,phi){
+  a = ((phi-1)*exp(-mu))^2
+  return(log(1+Re(polyroot(c(-a,0,1,1))[1])))
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

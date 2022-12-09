@@ -119,6 +119,10 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
     flash.backfit(verbose = verbose_flash) %>%
     flash.nullcheck(verbose = verbose_flash)
 
+  if(fit_flash$n.factors==0){
+    stop('No structure found in initialization')
+  }
+
   # KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
   # V = matrix(1/n,nrow=n,ncol=p)
   # obj = calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)

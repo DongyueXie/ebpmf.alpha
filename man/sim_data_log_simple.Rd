@@ -4,7 +4,7 @@
 \alias{sim_data_log_simple}
 \title{simulate simple Poisson matrix}
 \usage{
-sim_data_log_simple(N, p)
+sim_data_log_simple(N, p, K = 2, l = 20, d = NULL, var_e = 0, phi = 1.3)
 }
 \description{
 simulate simple Poisson matrix

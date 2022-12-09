@@ -9,9 +9,9 @@ simu_study_PMF(
   n_cores = 1,
   method_list = c("flash", "splitting"),
   Kmax = 10,
-  var_type = "by_row",
-  maxiter = 1000,
-  tol = 0.1
+  var_type = "by_col",
+  maxiter = 100,
+  tol = 1e-05
 )
 }
 \description{
