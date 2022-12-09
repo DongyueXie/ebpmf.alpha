@@ -22,6 +22,7 @@ simu_study_PMF = function(simdata,n_cores = 1,
 
   res = mclapply(1:n_simu,function(i){
 
+    print(paste('Running simulation', i))
 
     fitted_model <- vector("list", n_method)
     names(fitted_model) <- method_list
@@ -41,8 +42,10 @@ simu_study_PMF = function(simdata,n_cores = 1,
     a = c(apply(S,2,median))
     Y_normed = log(t(t((simdata$Y[[i]]/S))*(a/0.5))+1)
     Y_normed = Matrix(Y_normed,sparse = T)
-    fitted_model$flash = try(flash(Y_normed,greedy.Kmax = Kmax,var.type=var.type,verbose = 1,backfit = TRUE))
-    fitted_model$splitting = try(splitting_PMF_flashier(as.matrix(simdata$Y[[i]]),S,Kmax=Kmax,var_type=var_type,maxiter=maxiter,tol=tol,n_cores=1))
+    print('Fitting flash')
+    fitted_model$flash = try(flash(Y_normed,greedy.Kmax = Kmax,var.type=var.type,verbose = 0,backfit = TRUE))
+    print('Fitting splitting PMF')
+    fitted_model$splitting = try(splitting_PMF_flashier(as.matrix(simdata$Y[[i]]),S,Kmax=Kmax,var_type=var_type,maxiter=maxiter,tol=tol,n_cores=1,verbose = TRUE))
     # #mse_log = NULL
     # k_hat = NULL
     # if(class(fitted_model$flash)!='try-error'){
