@@ -3,25 +3,31 @@
 #'@param S The known scaling factor matrix, background frequency.
 #'@param sigma2 the variance term
 #'@param est_sigma2 whether estimate the variance term or fix it
+#'@param ebnm.fn see `?flash`.
 #'@return fitted object
 #'@import flashier
 #'@import magrittr
 #'@importFrom parallel mclapply
 #'@importFrom vebpm pois_mean_GG
 #'@export
-splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
-                         Kmax=10,var_type='by_col',
-                         M_init = NULL,
-                         maxiter=100,
-                         tol=1e-5,
-                         maxiter_backfitting = 10,
-                         verbose_flash=0,
-                         printevery=10,
-                         verbose=FALSE,
-                         n_cores = 1,
-                         save_fit_every = Inf,
-                         save_fit_path = NULL,
-                         save_fit_name = NULL){
+splitting_PMF_flashier = function(Y,S=NULL,
+                                  sigma2=NULL,est_sigma2 = TRUE,
+                                  ebnm.fn = ebnm::ebnm_point_normal,
+                                  loadings_sign = 0,
+                                  factors_sign = 0,
+                                  Kmax=50,
+                                  var_type='by_col',
+                                  M_init = NULL,
+                                  maxiter=100,
+                                  tol=1e-5,
+                                  maxiter_backfitting = 1,
+                                  verbose_flash=0,
+                                  printevery=10,
+                                  verbose=FALSE,
+                                  n_cores = 1,
+                                  save_fit_every = Inf,
+                                  save_fit_path = NULL,
+                                  save_fit_name = NULL){
 
   start_time = Sys.time()
 
@@ -107,20 +113,23 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
   }else if(var_type=='constant'){
     S.dim = NULL
   }else{
-    stop('Non-supported var type')
+    stop('Non-supported variance type')
   }
 
   if(verbose){
     cat('running initial flash greedy + backfitting')
     cat('\n')
   }
+
+  init.fn = function(f){init.fn.default(f, dim.signs = c(loadings_sign, factors_sign))}
+
   fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
-    flash.add.greedy(Kmax = Kmax,verbose = verbose_flash) %>%
+    flash.add.greedy(Kmax = Kmax,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn=init.fn) %>%
     flash.backfit(verbose = verbose_flash) %>%
     flash.nullcheck(verbose = verbose_flash)
 
   if(fit_flash$n.factors==0){
-    stop('No structure found in initialization')
+    stop('No structure found in initialization. How to deal with this issue?')
   }
 
   # KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
@@ -176,15 +185,15 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
     t1 = Sys.time()
     run_time_flash_init[iter] = difftime(t1,t0,units='secs')
 
-    fit_flash = flash.init.factors(fit_flash_new,init = fit_flash)
+    fit_flash = flash.init.factors(fit_flash_new,init = fit_flash,ebnm.fn=ebnm.fn)
     t2 = Sys.time()
     run_time_flash_init_factor[iter] = difftime(t2,t1,units='secs')
 
-    fit_flash = flash.add.greedy(fit_flash, Kmax = Kmax,verbose = verbose_flash)
+    fit_flash = flash.add.greedy(fit_flash, Kmax = Kmax,verbose = verbose_flash,ebnm.fn=ebnm.fn)
     t3 = Sys.time()
     run_time_flash_greedy[iter] = difftime(t3,t2,units='secs')
 
-    fit_flash = flash.backfit(fit_flash, verbose = verbose_flash,maxiter = maxiter_backfitting)
+    fit_flash = suppressWarnings(flash.backfit(fit_flash, verbose = verbose_flash,maxiter = maxiter_backfitting))
     t4 = Sys.time()
     run_time_flash_backfitting[iter] = difftime(t4,t3,units='secs')
 
@@ -269,7 +278,7 @@ splitting_PMF_flashier = function(Y,S,sigma2=NULL,est_sigma2 = TRUE,
 }
 
 
-
+#'@title calc splitting PMF objective function.
 calc_split_PMF_obj_flashier = function(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type){
   R2 = fit_flash$flash.fit$R2
   n = nrow(Y)

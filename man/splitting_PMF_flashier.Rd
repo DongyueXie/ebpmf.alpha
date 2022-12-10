@@ -6,15 +6,18 @@
 \usage{
 splitting_PMF_flashier(
   Y,
-  S,
+  S = NULL,
   sigma2 = NULL,
   est_sigma2 = TRUE,
-  Kmax = 10,
+  ebnm.fn = ebnm::ebnm_point_normal,
+  loadings_sign = 0,
+  factors_sign = 0,
+  Kmax = 50,
   var_type = "by_col",
   M_init = NULL,
   maxiter = 100,
   tol = 1e-05,
-  maxiter_backfitting = 10,
+  maxiter_backfitting = 1,
   verbose_flash = 0,
   printevery = 10,
   verbose = FALSE,
@@ -32,6 +35,8 @@ splitting_PMF_flashier(
 \item{sigma2}{the variance term}
 
 \item{est_sigma2}{whether estimate the variance term or fix it}
+
+\item{ebnm.fn}{see `?flash`.}
 }
 \value{
 fitted object
