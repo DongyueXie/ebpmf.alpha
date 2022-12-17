@@ -9,12 +9,14 @@ Ltrue = matrix(rnorm(N*K), ncol=K)
 # test
 Lambda = exp(tcrossprod(Ltrue,Ftrue))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
+
 fit = splitting_PMF_flashier(Y,verbose=TRUE)
 plot(fitted(fit$fit_flash),tcrossprod(Ltrue,Ftrue),col='grey80')
 abline(a=0,b=1)
 # test nonegative loading option
 Lambda = exp(tcrossprod(abs(Ltrue),Ftrue))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
+
 fit = splitting_PMF_flashier(Y,verbose=TRUE,
                              ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_normal),
                              loadings_sign = 1,maxiter = 100)
@@ -22,6 +24,10 @@ plot(fitted(fit$fit_flash),tcrossprod(abs(Ltrue),Ftrue),col='grey80')
 abline(a=0,b=1)
 plot(fit$fit_flash$F.pm[,1],type='l')
 plot(fit$fit_flash$F.pm[,2],type='l')
+
+fit = ebpmf(Y,verbose=TRUE,
+            ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_normal),
+            loadings_sign = 1,maxiter = 100)
 
 # datax= sim_data_log(n=100,p=100,K=3,n_simu = 1)
 # res = simu_study_PMF(datax)

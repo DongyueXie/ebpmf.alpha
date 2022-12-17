@@ -123,10 +123,12 @@ splitting_PMF_flashier = function(Y,S=NULL,
 
   init.fn = function(f){init.fn.default(f, dim.signs = c(loadings_sign, factors_sign))}
 
+  #print(sigma2)
   fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
     flash.add.greedy(Kmax = Kmax,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn=init.fn) %>%
-    flash.backfit(verbose = verbose_flash) %>%
+    flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
     flash.nullcheck(verbose = verbose_flash)
+
 
   if(fit_flash$n.factors==0){
     stop('No structure found in initialization. How to deal with this issue?')
@@ -178,6 +180,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
     #print(paste('After sigma2,elbo is',calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)))
     ## solve flash
 
+    #print(M[1:5,1:5])
     ## To timeing the operations, I seperate flash fits:
 
     t0 = Sys.time()
@@ -189,7 +192,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
     t2 = Sys.time()
     run_time_flash_init_factor[iter] = difftime(t2,t1,units='secs')
 
-    fit_flash = flash.add.greedy(fit_flash, Kmax = Kmax,verbose = verbose_flash,ebnm.fn=ebnm.fn)
+    fit_flash = flash.add.greedy(fit_flash, Kmax = Kmax,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn = init.fn)
     t3 = Sys.time()
     run_time_flash_greedy[iter] = difftime(t3,t2,units='secs')
 
@@ -201,7 +204,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
     t5 = Sys.time()
     run_time_flash_nullcheck[iter] = difftime(t5,t4,units='secs')
 
-
+    #print(fitted(fit_flash)[1:3,1:3])
     # fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
     #   flash.init.factors(init = fit_flash) %>%
     #   flash.add.greedy(Kmax = Kmax,verbose = verbose_flash) %>%
