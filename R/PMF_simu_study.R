@@ -45,7 +45,7 @@ simu_study_PMF = function(simdata,n_cores = 1,
     print('Fitting flash')
     fitted_model$flash = try(flash(Y_normed,greedy.Kmax = Kmax,var.type=var.type,verbose = 0,backfit = TRUE))
     print('Fitting splitting PMF')
-    fitted_model$splitting = try(splitting_PMF_flashier(as.matrix(simdata$Y[[i]]),S,Kmax=Kmax,var_type=var_type,maxiter=maxiter,tol=tol,n_cores=1,verbose = TRUE))
+    fitted_model$splitting = try(splitting_PMF_flashier(as.matrix(simdata$Y[[i]]),S,Kmax=Kmax,var_type=var_type,maxiter=maxiter,conv_tol=tol,n_cores=1,verbose = TRUE))
     # #mse_log = NULL
     # k_hat = NULL
     # if(class(fitted_model$flash)!='try-error'){

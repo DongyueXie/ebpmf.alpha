@@ -19,7 +19,9 @@ splitting_PMF_flashier = function(Y,S=NULL,
                                   var_type='by_col',
                                   M_init = NULL,
                                   maxiter=100,
-                                  tol=1e-5,
+                                  conv_tol=1e-5,
+                                  init_tol = 1e-5,
+                                  vga_tol = 1e-5,
                                   maxiter_backfitting = 1,
                                   verbose_flash=0,
                                   printevery=10,
@@ -51,7 +53,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
       if(verbose){
         cat('Solving VGA...')
       }
-      init_val = pois_mean_GG(as.vector(Y),as.vector(S),prior_mean = 0,prior_var = NULL,tol=1e-3)
+      init_val = pois_mean_GG(as.vector(Y),as.vector(S),prior_mean = 0,prior_var = NULL,tol=init_tol)
       sigma2_init = init_val$fitted_g$var
       M0 = matrix(init_val$posterior$mean_log,nrow=n,ncol=p)
     }
@@ -65,7 +67,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
             cat(paste(i,'...'))
           }
         }
-        fit = pois_mean_GG(Y[i,],S[i,],prior_mean = 0,prior_var = NULL,tol=1e-3)
+        fit = pois_mean_GG(Y[i,],S[i,],prior_mean = 0,prior_var = NULL,tol=init_tol)
         return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
       },mc.cores = n_cores)
       sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
@@ -81,7 +83,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
             cat(paste(i,'...'))
           }
         }
-        fit = pois_mean_GG(Y[,i],S[,i],prior_mean = 0,prior_var = NULL,tol=1e-3)
+        fit = pois_mean_GG(Y[,i],S[,i],prior_mean = 0,prior_var = NULL,tol=init_tol)
         return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
       },mc.cores = n_cores)
       sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
@@ -158,7 +160,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
   for(iter in 1:maxiter){
 
     t0 = Sys.time()
-    res = vga_pois_solver_mat(M,Y,S,fitted(fit_flash),adjust_var_shape(sigma2,var_type,n,p))
+    res = vga_pois_solver_mat(M,Y,S,fitted(fit_flash),adjust_var_shape(sigma2,var_type,n,p),tol=vga_tol)
     M = res$M
     V = res$V
     t1 = Sys.time()
@@ -225,7 +227,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
 
     # check convergence
     obj[iter + 1] = calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)
-    if((obj[iter+1] - obj[iter])/num_points < tol){
+    if((obj[iter+1] - obj[iter])/num_points < conv_tol){
       if((obj[iter+1] - obj[iter])<0){
         warning('An iteration decreases ELBO')
       }
@@ -234,7 +236,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
 
     if(verbose){
       if(iter%%printevery==0){
-        print(paste('At iter ',iter, ', ELBO=',round(obj[iter+1],log10(1/tol)),sep = ''))
+        print(paste('At iter ',iter, ', ELBO=',round(obj[iter+1],log10(1/conv_tol)),sep = ''))
       }
     }
 
@@ -244,7 +246,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
       saveRDS(list(fit_flash=fit_flash,
                    elbo=obj[length(obj)],
                    K_trace=K_trace,
-                   eblo_trace=obj,
+                   elbo_trace=obj,
                    sigma2 = sigma2,
                    run_time = difftime(Sys.time(),start_time,units='auto'),
                    #M=M,V=V,
@@ -266,7 +268,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
   return(list(fit_flash=fit_flash,
               elbo=obj[length(obj)],
               K_trace=K_trace,
-              eblo_trace=obj,
+              elbo_trace=obj,
               sigma2 = sigma2,
               run_time = difftime(end_time,start_time,units='auto'),
               #M=M,V=V,
