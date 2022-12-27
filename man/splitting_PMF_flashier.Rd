@@ -7,19 +7,25 @@
 splitting_PMF_flashier(
   Y,
   S = NULL,
+  var_type = "by_col",
   sigma2 = NULL,
   est_sigma2 = TRUE,
   ebnm.fn = ebnm::ebnm_point_normal,
   loadings_sign = 0,
   factors_sign = 0,
-  Kmax = 50,
-  var_type = "by_col",
+  Kmax_init = 50,
+  add_greedy_Kmax = 50,
+  add_greedy_warmstart = TRUE,
+  add_greedy_extrapolate = FALSE,
+  add_greedy_init = "new_init",
+  add_greedy_every = 1,
   M_init = NULL,
   maxiter = 100,
+  maxiter_backfitting = 1,
+  maxiter_vga = 1,
   conv_tol = 1e-05,
   init_tol = 1e-05,
   vga_tol = 1e-05,
-  maxiter_backfitting = 1,
   verbose_flash = 0,
   printevery = 10,
   verbose = FALSE,
@@ -36,9 +42,25 @@ splitting_PMF_flashier(
 
 \item{sigma2}{the variance term}
 
-\item{est_sigma2}{whether estimate the variance term or fix it}
+\item{est_sigma2}{whether estimate the variance term or fix it at sigma2}
 
 \item{ebnm.fn}{see `?flash`.}
+
+\item{loadings_sign, factors_sign}{see `?init.fn.default`, must match ebnm.fn}
+
+\item{Kmax_init}{the Kmax in the first flash fit}
+
+\item{add_greedy_Kmax}{THe Kmax in add_greedy in iterations}
+
+\item{add_greedy_warmstart, add_greedy_extrapolate}{see `?flash.add.greedy`}
+
+\item{add_greedy_init}{either 'previous_init' or "new_init"}
+
+\item{add_greedy_every}{perform flash add greedy every `add_greedy_every` iterations.}
+
+\item{maxiter, maxiter_backfitting, maxiter_vga}{max iterations for the splitting, backfitting, vga.}
+
+\item{conv_tol, init_tol, vga_tol}{tolerance for convergence, initialization vga fit, and vga fit in iterations}
 }
 \value{
 fitted object

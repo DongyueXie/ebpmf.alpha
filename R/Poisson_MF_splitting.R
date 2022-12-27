@@ -2,8 +2,16 @@
 #'@param Y count data matrix
 #'@param S The known scaling factor matrix, background frequency.
 #'@param sigma2 the variance term
-#'@param est_sigma2 whether estimate the variance term or fix it
+#'@param est_sigma2 whether estimate the variance term or fix it at sigma2
 #'@param ebnm.fn see `?flash`.
+#'@param loadings_sign,factors_sign see `?init.fn.default`, must match ebnm.fn
+#'@param Kmax_init the Kmax in the first flash fit
+#'@param add_greedy_Kmax THe Kmax in add_greedy in iterations
+#'@param add_greedy_warmstart,add_greedy_extrapolate see `?flash.add.greedy`
+#'@param add_greedy_init either 'previous_init' or "new_init"
+#'@param add_greedy_every perform flash add greedy every `add_greedy_every` iterations.
+#'@param maxiter,maxiter_backfitting,maxiter_vga max iterations for the splitting, backfitting, vga.
+#'@param conv_tol,init_tol,vga_tol tolerance for convergence, initialization vga fit, and vga fit in iterations
 #'@return fitted object
 #'@import flashier
 #'@import magrittr
@@ -11,18 +19,25 @@
 #'@importFrom vebpm pois_mean_GG
 #'@export
 splitting_PMF_flashier = function(Y,S=NULL,
-                                  sigma2=NULL,est_sigma2 = TRUE,
+                                  var_type='by_col',
+                                  sigma2=NULL,
+                                  est_sigma2 = TRUE,
                                   ebnm.fn = ebnm::ebnm_point_normal,
                                   loadings_sign = 0,
                                   factors_sign = 0,
-                                  Kmax=50,
-                                  var_type='by_col',
+                                  Kmax_init=50,
+                                  add_greedy_Kmax = 50,
+                                  add_greedy_warmstart = TRUE,
+                                  add_greedy_extrapolate = FALSE,
+                                  add_greedy_init = 'new_init',
+                                  add_greedy_every = 1,
                                   M_init = NULL,
                                   maxiter=100,
+                                  maxiter_backfitting = 1,
+                                  maxiter_vga = 1,
                                   conv_tol=1e-5,
                                   init_tol = 1e-5,
                                   vga_tol = 1e-5,
-                                  maxiter_backfitting = 1,
                                   verbose_flash=0,
                                   printevery=10,
                                   verbose=FALSE,
@@ -119,18 +134,25 @@ splitting_PMF_flashier = function(Y,S=NULL,
   }
 
   if(verbose){
-    cat('running initial flash greedy + backfitting')
+    cat('running initial flash fit')
     cat('\n')
   }
 
-  init.fn = function(f){init.fn.default(f, dim.signs = c(loadings_sign, factors_sign))}
+  #init.fn.flash = function(f){init.fn.default(f, dim.signs = c(loadings_sign, factors_sign))}
+  if(loadings_sign==0&factors_sign==0){
+    init.fn.flash = function(f){init.fn.irlba(f)}
+  }else{
+    init.fn.flash = function(f){init.fn.default(f, dim.signs = c(loadings_sign, factors_sign))}
+  }
+
 
   #print(sigma2)
-  fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
-    flash.add.greedy(Kmax = Kmax,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn=init.fn) %>%
+  t0 = Sys.time()
+  fit_flash = suppressWarnings(flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
+    flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
     flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
-    flash.nullcheck(verbose = verbose_flash)
-
+    flash.nullcheck(verbose = verbose_flash))
+  run_time_flash_init =  difftime(Sys.time(),t0,units = 'secs')
 
   if(fit_flash$n.factors==0){
     stop('No structure found in initialization. How to deal with this issue?')
@@ -141,6 +163,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
   # obj = calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)
 
   K_trace = fit_flash$n.factors
+  K_changed = TRUE
   obj = -Inf
 
 
@@ -150,17 +173,22 @@ splitting_PMF_flashier = function(Y,S=NULL,
   }
 
   run_time_vga = c()
-  run_time_flash_init = c()
   run_time_flash_init_factor = c()
   run_time_flash_greedy = c()
   run_time_flash_backfitting = c()
   run_time_flash_nullcheck = c()
 
 
+
+
   for(iter in 1:maxiter){
 
     t0 = Sys.time()
-    res = vga_pois_solver_mat(M,Y,S,fitted(fit_flash),adjust_var_shape(sigma2,var_type,n,p),tol=vga_tol)
+    # res = vga_pois_solver_mat(M,Y,S,fitted(fit_flash),adjust_var_shape(sigma2,var_type,n,p),tol=vga_tol,maxiter = maxiter_vga)
+    res = vga_pois_solver_mat_newton_iter(M,Y,S,fitted(fit_flash),
+                                          adjust_var_shape(sigma2,var_type,n,p),
+                                          maxiter = maxiter_vga,
+                                          tol=vga_tol)
     M = res$M
     V = res$V
     t1 = Sys.time()
@@ -183,18 +211,35 @@ splitting_PMF_flashier = function(Y,S=NULL,
     ## solve flash
 
     #print(M[1:5,1:5])
-    ## To timeing the operations, I seperate flash fits:
+    #print(summary(sigma2))
+    ## To timing the operations, I separate flash fits:
 
     t0 = Sys.time()
     fit_flash_new = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)
-    t1 = Sys.time()
-    run_time_flash_init[iter] = difftime(t1,t0,units='secs')
-
     fit_flash = flash.init.factors(fit_flash_new,init = fit_flash,ebnm.fn=ebnm.fn)
     t2 = Sys.time()
-    run_time_flash_init_factor[iter] = difftime(t2,t1,units='secs')
+    run_time_flash_init_factor[iter] = difftime(t2,t0,units='secs')
 
-    fit_flash = flash.add.greedy(fit_flash, Kmax = Kmax,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn = init.fn)
+    if(iter%%add_greedy_every==0){
+      if(add_greedy_init=='previous_init'){
+        if(K_changed){
+          init_vals = do.call(init.fn.flash,list(fit_flash$flash.fit))
+        }
+        fit_flash$flash.fit$init_vals = init_vals
+
+        fit_flash = flash.add.greedy(fit_flash, Kmax = 1,verbose = verbose_flash,
+                                     ebnm.fn=ebnm.fn,init.fn = init.fn.fix,
+                                     warmstart = add_greedy_warmstart,
+                                     extrapolate = add_greedy_extrapolate)
+      }else if(add_greedy_init=='new_init'){
+        fit_flash = flash.add.greedy(fit_flash, Kmax = add_greedy_Kmax,verbose = verbose_flash,
+                                     ebnm.fn=ebnm.fn,init.fn = init.fn.flash,
+                                     warmstart = add_greedy_warmstart,
+                                     extrapolate = add_greedy_extrapolate)
+      }
+      K_changed = (fit_flash$n.factors != K_trace[iter])
+    }
+
     t3 = Sys.time()
     run_time_flash_greedy[iter] = difftime(t3,t2,units='secs')
 
@@ -214,6 +259,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
     #   flash.nullcheck(verbose = verbose_flash)
 
     K_trace[iter+1] = fit_flash$n.factors
+
 
     # fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
     #   flash.add.greedy(Kmax = Kmax,verbose = verbose_flash)
@@ -236,7 +282,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
 
     if(verbose){
       if(iter%%printevery==0){
-        print(paste('At iter ',iter, ', ELBO=',round(obj[iter+1],log10(1/conv_tol)),sep = ''))
+        print(paste('iter ',iter, ', ELBO=',round(obj[iter+1],log10(1/conv_tol)),", K=",fit_flash$n.factors,sep = ''))
       }
     }
 
@@ -252,8 +298,8 @@ splitting_PMF_flashier = function(Y,S=NULL,
                    #M=M,V=V,
                    #init_val=init_val,
                    run_time_break_down = list(run_time_vga_init = run_time_vga_init,
-                                              run_time_vga = run_time_vga,
                                               run_time_flash_init = run_time_flash_init,
+                                              run_time_vga = run_time_vga,
                                               run_time_flash_init_factor = run_time_flash_init_factor,
                                               run_time_flash_greedy = run_time_flash_greedy,
                                               run_time_flash_backfitting = run_time_flash_backfitting,
@@ -274,8 +320,8 @@ splitting_PMF_flashier = function(Y,S=NULL,
               #M=M,V=V,
               init_val=init_val,
               run_time_break_down = list(run_time_vga_init = run_time_vga_init,
-                                         run_time_vga = run_time_vga,
                                          run_time_flash_init = run_time_flash_init,
+                                         run_time_vga = run_time_vga,
                                          run_time_flash_init_factor = run_time_flash_init_factor,
                                          run_time_flash_greedy = run_time_flash_greedy,
                                          run_time_flash_backfitting = run_time_flash_backfitting,
@@ -336,6 +382,34 @@ vga_pois_solver_mat = function(init_Val,X,S,Beta,Sigma2,maxiter=1000,tol=1e-8){
 
   return(list(M = matrix(res$m,nrow=n,ncol=p,byrow = F),V = matrix(res$v,nrow=n,ncol=p,byrow = F)))
 
+}
+
+#'@title a matrix version of the vga solver using Newton's method, for only one/2/3/... iteration
+#'@importFrom vebpm vga_pois_solver_bisection
+vga_pois_solver_mat_newton_iter = function(M,X,S,Beta,Sigma2,maxiter=1,tol=1e-8){
+
+  const0 = Sigma2*X+Beta + 1
+  const1 = 1/Sigma2
+  const2 = Sigma2/2
+  temp = (const0-M)
+
+  # make sure m < sigma2*x+beta
+  idx = (M>(const0-1))
+  if(sum(idx)>0){
+    M[idx] =suppressWarnings(vga_pois_solver_bisection(c(X[idx]),c(S[idx]),c(Beta[idx]),c(Sigma2[idx]),maxiter = 10)$m)
+  }
+  for(i in 1:maxiter){
+    sexp = S*exp(M+const2/temp)
+    f = X - sexp - (M-Beta)/Sigma2
+    if(max(abs(f))<tol){
+      break
+    }
+    f_grad = -sexp*(1+const2/temp^2)-const1
+    # direction = (X - sexp - (M-Beta)/Sigma2)/(-sexp*(1+const2/temp^2)-const1)
+    M = M - f/f_grad
+  }
+
+  return(list(M=M,V=Sigma2/(const0-M)))
 }
 
 
