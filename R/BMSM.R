@@ -201,30 +201,30 @@ bmsm_control_default = function(){
        Elogl = TRUE)
 }
 
-
-reflect_kushal = function(x){
-  extended_len <- 2^{ceiling(log(length(x), base=2))}
-  if(extended_len > length(x)){
-    pos_to_fill <- extended_len - length(x)
-    pos_to_fill_1 <- floor(pos_to_fill/2)
-    pos_to_fill_2 <- pos_to_fill - pos_to_fill_1
-    if(pos_to_fill_1 >= 1){
-      x_ext <- c(rev(head(x, pos_to_fill_1)), x, rev(tail(x, pos_to_fill_2)))
-    }else{
-      x_ext <- c(x, rev(tail(x, pos_to_fill_2)))
-    }
-  }else if(extended_len == length(x)){
-    pos_to_fill_1 <- 0
-    x_ext <- x
-  }else{
-    stop("error in extending the vector to make its size a power of 2")
-  }
-  return(list(x_ext=x_ext,idx=(pos_to_fill_1+1):(pos_to_fill_1 + length(x))))
-}
-
-
-
-
+#
+# reflect_kushal = function(x){
+#   extended_len <- 2^{ceiling(log(length(x), base=2))}
+#   if(extended_len > length(x)){
+#     pos_to_fill <- extended_len - length(x)
+#     pos_to_fill_1 <- floor(pos_to_fill/2)
+#     pos_to_fill_2 <- pos_to_fill - pos_to_fill_1
+#     if(pos_to_fill_1 >= 1){
+#       x_ext <- c(rev(head(x, pos_to_fill_1)), x, rev(tail(x, pos_to_fill_2)))
+#     }else{
+#       x_ext <- c(x, rev(tail(x, pos_to_fill_2)))
+#     }
+#   }else if(extended_len == length(x)){
+#     pos_to_fill_1 <- 0
+#     x_ext <- x
+#   }else{
+#     stop("error in extending the vector to make its size a power of 2")
+#   }
+#   return(list(x_ext=x_ext,idx=(pos_to_fill_1+1):(pos_to_fill_1 + length(x))))
+# }
+#
+#
+#
+#
 
 
 
