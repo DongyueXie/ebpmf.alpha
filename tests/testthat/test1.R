@@ -2,16 +2,17 @@ set.seed(12345)
 N = 10000
 p = 100
 K = 3
+sigma2 = 0.25
 Ftrue = matrix(0,nrow=p,ncol=K)
-Ftrue[1:20,1] = 5
+Ftrue[1:20,1] = 1
 Ftrue[21:40,2] = 2
 Ftrue[41:60,3] = 1
 Ltrue = matrix(rnorm(N*K), ncol=K)
 # test
-Lambda = exp(tcrossprod(Ltrue,Ftrue))
+Lambda = exp(tcrossprod(Ltrue,Ftrue) + matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
-fit = splitting_PMF_flashier(Y,verbose=TRUE,n_cores = 10)
+fit = splitting_PMF_flashier(Y,verbose=TRUE,n_cores = 10,add_greedy_Kmax = 1,add_greedy_init = 'previous_init')
 plot(fit$K_trace)
 plot(fitted(fit$fit_flash),tcrossprod(Ltrue,Ftrue),col='grey80')
 abline(a=0,b=1)
@@ -62,14 +63,14 @@ temp_func = function(x,
 
 fit = splitting_PMF_flashier(Y,verbose=TRUE,
                              ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_exponential),
-                             loadings_sign = 1,factors_sign = 1,maxiter = 100,n_cores = 15)
+                             loadings_sign = 1,factors_sign = 1,maxiter = 100,n_cores = 10)
 fit = splitting_PMF_flashier(Y,verbose=TRUE,
                              add_greedy_Kmax = 1,
                              maxiter_vga = 100,
                              vga_tol = 1e-8,
                              add_greedy_init = 'new_init',
                              ebnm.fn = c(ebnm::ebnm_unimodal_nonnegative, ebnm::ebnm_unimodal_nonnegative),
-                             loadings_sign = 1,factors_sign = 1,maxiter = 100,n_cores = 15)
+                             loadings_sign = 1,factors_sign = 1,maxiter = 100,n_cores = 10)
 plot(fit$K_trace)
 plot(fitted(fit$fit_flash),tcrossprod(abs(Ltrue),abs(Ftrue)),col='grey80')
 abline(a=0,b=1)

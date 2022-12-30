@@ -19,10 +19,11 @@ rm(counts)
 rm(genes)
 rm(cells)
 
+#Y = as.matrix(pbmc_facs$counts)
 S = tcrossprod(c(rowSums(Y)),c(colSums(Y)))/sum(Y)
 Y = as.matrix(Y)
 # run method
-fit = splitting_PMF_flashier(Y,S,var_type = 'by_col',Kmax = 30,maxiter = 1000,verbose = TRUE)
+fit = splitting_PMF_flashier(Y,S,var_type = 'by_col',Kmax = 30,maxiter = 1000,verbose = TRUE,n_cores = 10)
 
 ##############
 fit = readRDS('/project2/mstephens/dongyue/poisson_mf/pbmc_3cells_Sij.rds')

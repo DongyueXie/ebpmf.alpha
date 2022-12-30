@@ -1,7 +1,7 @@
 Package: stm
 Type: Package
 Title: Fit Empirical Bayes Topic Model
-Version: 1.1.8
+Version: 1.1.9
 Author: Dongyue Xie
 Maintainer: Dongyue Xie <dyxie@uchicago.edu>
 Description: This package fits Empirical Bayes Poisson Matrix Factorization. 

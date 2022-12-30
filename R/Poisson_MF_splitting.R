@@ -26,10 +26,10 @@ splitting_PMF_flashier = function(Y,S=NULL,
                                   loadings_sign = 0,
                                   factors_sign = 0,
                                   Kmax_init=50,
-                                  add_greedy_Kmax = 50,
+                                  add_greedy_Kmax = 1,
                                   add_greedy_warmstart = TRUE,
                                   add_greedy_extrapolate = FALSE,
-                                  add_greedy_init = 'new_init',
+                                  add_greedy_init = 'previous_init',
                                   add_greedy_every = 1,
                                   M_init = NULL,
                                   maxiter=100,
@@ -68,9 +68,10 @@ splitting_PMF_flashier = function(Y,S=NULL,
       if(verbose){
         cat('Solving VGA...')
       }
-      init_val = pois_mean_GG(as.vector(Y),as.vector(S),prior_mean = 0,prior_var = NULL,tol=init_tol)
+      init_val = suppressWarnings(pois_mean_GG(as.vector(Y),as.vector(S),prior_mean = 0,prior_var = NULL,tol=init_tol))
       sigma2_init = init_val$fitted_g$var
       M0 = matrix(init_val$posterior$mean_log,nrow=n,ncol=p)
+      V = matrix(init_val$posterior$var_log,nrow=n,ncol=p)
     }
     if(var_type=='by_row'){
       if(verbose){
@@ -82,11 +83,12 @@ splitting_PMF_flashier = function(Y,S=NULL,
             cat(paste(i,'...'))
           }
         }
-        fit = pois_mean_GG(Y[i,],S[i,],prior_mean = 0,prior_var = NULL,tol=init_tol)
+        fit = suppressWarnings(pois_mean_GG(Y[i,],S[i,],prior_mean = 0,prior_var = NULL,tol=init_tol))
         return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
       },mc.cores = n_cores)
       sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
       M0 = do.call(rbind,lapply(init_val,function(fit){fit$mean_log}))
+      V = do.call(rbind,lapply(init_val,function(fit){fit$var_log}))
     }
     if(var_type=='by_col'){
       if(verbose){
@@ -98,11 +100,12 @@ splitting_PMF_flashier = function(Y,S=NULL,
             cat(paste(i,'...'))
           }
         }
-        fit = pois_mean_GG(Y[,i],S[,i],prior_mean = 0,prior_var = NULL,tol=init_tol)
+        fit = suppressWarnings(pois_mean_GG(Y[,i],S[,i],prior_mean = 0,prior_var = NULL,tol=init_tol))
         return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
       },mc.cores = n_cores)
       sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
       M0 = do.call(cbind,lapply(init_val,function(fit){fit$mean_log}))
+      V = do.call(cbind,lapply(init_val,function(fit){fit$var_log}))
     }
   }
   run_time_vga_init = difftime(Sys.time(),start_time,units = 'secs')
@@ -119,6 +122,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
     rm(M0)
   }else{
     M = M_init
+    rm(M_init)
   }
 
   const = sum(Y*log(S)) - sum(lfactorial(Y))
@@ -158,10 +162,6 @@ splitting_PMF_flashier = function(Y,S=NULL,
     stop('No structure found in initialization. How to deal with this issue?')
   }
 
-  # KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
-  # V = matrix(1/n,nrow=n,ncol=p)
-  # obj = calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)
-
   K_trace = fit_flash$n.factors
   K_changed = TRUE
   obj = -Inf
@@ -179,21 +179,40 @@ splitting_PMF_flashier = function(Y,S=NULL,
   run_time_flash_nullcheck = c()
 
 
+  if(!exists('V')){
+    V = NULL
+  }
 
-
+  # KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
   for(iter in 1:maxiter){
 
     t0 = Sys.time()
-    # res = vga_pois_solver_mat(M,Y,S,fitted(fit_flash),adjust_var_shape(sigma2,var_type,n,p),tol=vga_tol,maxiter = maxiter_vga)
-    res = vga_pois_solver_mat_newton_iter(M,Y,S,fitted(fit_flash),
-                                          adjust_var_shape(sigma2,var_type,n,p),
-                                          maxiter = maxiter_vga,
-                                          tol=vga_tol)
+    if(maxiter_vga>1){
+      res = vga_pois_solver_mat_newton(M,Y,S,fitted(fit_flash),
+                                       adjust_var_shape(sigma2,var_type,n,p),
+                                       maxiter = maxiter_vga,
+                                       tol=vga_tol)
+    }else{
+      res = vga_pois_solver_mat_newton_fixed_iter(M,V,Y,S,fitted(fit_flash),
+                                                  adjust_var_shape(sigma2,var_type,n,p),
+                                                  maxiter = 1)
+    }
+
+    # res = vga_pois_solver_mat_newton_fixed_iter_debug(M,V,Y,S,fitted(fit_flash),
+    #                                  adjust_var_shape(sigma2,var_type,n,p),
+    #                                  KL_LF,const,sigma2,fit_flash,var_type,
+    #                                  maxiter = maxiter_vga,
+    #                                  tol=vga_tol)
     M = res$M
     V = res$V
     t1 = Sys.time()
     run_time_vga[iter] = difftime(t1,t0,units='secs')
-    #print(paste('After vga,elbo is',calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)))
+
+    # if(iter>1){
+    #   print(paste('iteration:',iter))
+    #   print(paste('vga,elbo is',round(calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type),3)))
+    # }
+
 
     # update sigma2
     if(est_sigma2){
@@ -207,16 +226,20 @@ splitting_PMF_flashier = function(Y,S=NULL,
         stop('Non-supported var type')
       }
     }
-    #print(paste('After sigma2,elbo is',calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)))
+    # if(iter>1){
+    #   print(paste('sigma2,elbo is',round(calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type),3)))
+    # }
     ## solve flash
 
-    #print(M[1:5,1:5])
-    #print(summary(sigma2))
     ## To timing the operations, I separate flash fits:
 
     t0 = Sys.time()
-    fit_flash_new = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)
-    fit_flash = flash.init.factors(fit_flash_new,init = fit_flash,ebnm.fn=ebnm.fn)
+    #fit_flash_new = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)
+    #fit_flash = flash.init.factors(fit_flash_new,init = fit_flash,ebnm.fn=ebnm.fn)
+
+    fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim) %>%
+                flash.init.factors(init = fit_flash,ebnm.fn=ebnm.fn)
+
     t2 = Sys.time()
     run_time_flash_init_factor[iter] = difftime(t2,t0,units='secs')
 
@@ -226,7 +249,6 @@ splitting_PMF_flashier = function(Y,S=NULL,
           init_vals = do.call(init.fn.flash,list(fit_flash$flash.fit))
         }
         fit_flash$flash.fit$init_vals = init_vals
-
         fit_flash = flash.add.greedy(fit_flash, Kmax = 1,verbose = verbose_flash,
                                      ebnm.fn=ebnm.fn,init.fn = init.fn.fix,
                                      warmstart = add_greedy_warmstart,
@@ -251,25 +273,20 @@ splitting_PMF_flashier = function(Y,S=NULL,
     t5 = Sys.time()
     run_time_flash_nullcheck[iter] = difftime(t5,t4,units='secs')
 
+    K_trace[iter+1] = fit_flash$n.factors
+    KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
+    # if(iter>1){
+    #   print(paste('flash,elbo is',round(calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type),3)))
+    #   cat("----------------------------")
+    #   cat("\n")
+    # }
+
     #print(fitted(fit_flash)[1:3,1:3])
     # fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
     #   flash.init.factors(init = fit_flash) %>%
     #   flash.add.greedy(Kmax = Kmax,verbose = verbose_flash) %>%
     #   flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
     #   flash.nullcheck(verbose = verbose_flash)
-
-    K_trace[iter+1] = fit_flash$n.factors
-
-
-    # fit_flash = flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
-    #   flash.add.greedy(Kmax = Kmax,verbose = verbose_flash)
-
-
-    KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
-    #print(paste('After flash,elbo is',calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)))
-
-
-
 
     # check convergence
     obj[iter + 1] = calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type)
@@ -329,6 +346,8 @@ splitting_PMF_flashier = function(Y,S=NULL,
 }
 
 
+
+
 #'@title calc splitting PMF objective function.
 calc_split_PMF_obj_flashier = function(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type){
   R2 = fit_flash$flash.fit$R2
@@ -350,7 +369,7 @@ calc_split_PMF_obj_flashier = function(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_
   return(val)
 }
 
-
+#'@title adjust var shape for vga. Can be improved to save memory
 adjust_var_shape = function(sigma2,var_type,n,p){
   if(var_type=='constant'){
     sigma2 = matrix(sigma2,nrow=n,ncol=p)
@@ -363,59 +382,5 @@ adjust_var_shape = function(sigma2,var_type,n,p){
   }
   sigma2
 }
-
-
-#'@title a matrix version of the solver
-#'@importFrom vebpm vga_pois_solver
-vga_pois_solver_mat = function(init_Val,X,S,Beta,Sigma2,maxiter=1000,tol=1e-8){
-
-  n = nrow(X)
-  p = ncol(X)
-  # transform them to vector
-  x = as.vector(X)
-  s = as.vector(S)
-  beta = as.vector(Beta)
-  sigma2 = as.vector(Sigma2)
-  init_val = as.vector(init_Val)
-
-  res = vga_pois_solver(init_val,x,s,beta,sigma2,maxiter=maxiter,tol=tol,method='newton')
-
-  return(list(M = matrix(res$m,nrow=n,ncol=p,byrow = F),V = matrix(res$v,nrow=n,ncol=p,byrow = F)))
-
-}
-
-#'@title a matrix version of the vga solver using Newton's method, for only one/2/3/... iteration
-#'@importFrom vebpm vga_pois_solver_bisection
-vga_pois_solver_mat_newton_iter = function(M,X,S,Beta,Sigma2,maxiter=1,tol=1e-8){
-
-  const0 = Sigma2*X+Beta + 1
-  const1 = 1/Sigma2
-  const2 = Sigma2/2
-  temp = (const0-M)
-
-  # make sure m < sigma2*x+beta
-  idx = (M>(const0-1))
-  if(sum(idx)>0){
-    M[idx] =suppressWarnings(vga_pois_solver_bisection(c(X[idx]),c(S[idx]),c(Beta[idx]),c(Sigma2[idx]),maxiter = 10)$m)
-  }
-  for(i in 1:maxiter){
-    sexp = S*exp(M+const2/temp)
-    f = X - sexp - (M-Beta)/Sigma2
-    if(max(abs(f))<tol){
-      break
-    }
-    f_grad = -sexp*(1+const2/temp^2)-const1
-    # direction = (X - sexp - (M-Beta)/Sigma2)/(-sexp*(1+const2/temp^2)-const1)
-    M = M - f/f_grad
-  }
-
-  return(list(M=M,V=Sigma2/(const0-M)))
-}
-
-
-
-
-
-
 
 
