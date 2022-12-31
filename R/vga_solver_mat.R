@@ -53,6 +53,49 @@ vga_pois_solver_mat_newton_fixed_iter = function(M,V,Y,S,Beta,Sigma2,maxiter=100
 }
 
 
+#'@title a matrix version of the vga solver using Newton's method, low memory mode by partitioning the rows
+#'@importFrom vebpm vga_pois_solver_bisection
+#'@importFrom Rfast Pmin
+#'@importFrom parallel
+vga_pois_solver_mat_newton_low_memory = function(M,Y,l0,f0,EL,EF,
+                                                 sigma2,var_type,
+                                                 maxiter=1000,tol=1e-8){
+
+  n = nrow(M)
+  p = ncol(M)
+  M = Pmin(M,tcrossprod(EL,EF))
+
+  if(var_type=='by_col'){
+    const0 = Y%*%Diagonal(p,sigma2)+tcrossprod(EL,EF)+ 1
+    for(i in 1:maxiter){
+      sexp = l0*exp(M+(1/(const0-M))%*%Diagonal(p,sigma2/2))%*%Diagonal(p,f0)
+      f = Y-sexp + (tcrossprod(EL,EF)-M)%*%Diagonal(p,1/sigma2)
+      if(max(abs(f))<tol){
+        break
+      }
+      # f_grad = - sexp*(1+0.5*(const0-M)^(-2)) - matrix(1/sigma2,nrow=n,ncol=p,byrow = TRUE)
+      # direction = (X - sexp - (M-Beta)/Sigma2)/(-sexp*(1+const2/temp^2)-const1)
+      M = M - f/(- sexp*(1+0.5*(const0-M)^(-2)) - matrix(1/sigma2,nrow=n,ncol=p,byrow = TRUE))
+    }
+  }
+
+  if(var_type=='by_row'){
+    const0 = sigma2*Y+tcrossprod(EL,EF)+ 1
+    for(i in 1:maxiter){
+      sexp = l0*exp(M+(1/(const0-M))*sigma2/2)%*%Diagonal(p,f0)
+      f = Y-sexp + (tcrossprod(EL,EF)-M)/sigma2
+      print(range(f))
+      if(max(abs(f))<tol){
+        break
+      }
+      # f_grad = - sexp*(1+0.5*(const0-M)^(-2)) - matrix(1/sigma2,nrow=n,ncol=p,byrow = TRUE)
+      # direction = (X - sexp - (M-Beta)/Sigma2)/(-sexp*(1+const2/temp^2)-const1)
+      M = M - f/(- sexp*(1+0.5*(const0-M)^(-2)) - 1/sigma2)
+    }
+  }
+  return(as.matrix(M))
+}
+
 
 
 
