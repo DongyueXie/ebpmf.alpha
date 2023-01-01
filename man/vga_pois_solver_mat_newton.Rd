@@ -4,7 +4,16 @@
 \alias{vga_pois_solver_mat_newton}
 \title{a matrix version of the vga solver using Newton's method}
 \usage{
-vga_pois_solver_mat_newton(M, X, S, Beta, Sigma2, maxiter = 1000, tol = 1e-08)
+vga_pois_solver_mat_newton(
+  M,
+  X,
+  S,
+  Beta,
+  Sigma2,
+  maxiter = 1000,
+  tol = 1e-08,
+  return_V = TRUE
+)
 }
 \description{
 a matrix version of the vga solver using Newton's method

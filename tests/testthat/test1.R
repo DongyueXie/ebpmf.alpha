@@ -1,10 +1,10 @@
 set.seed(12345)
-N = 300
+N = 1000
 p = 100
 K = 3
 sigma2 = 0.25
 Ftrue = matrix(0,nrow=p,ncol=K)
-Ftrue[1:20,1] = 1
+Ftrue[1:20,1] = 3
 Ftrue[21:40,2] = 2
 Ftrue[41:60,3] = 1
 Ltrue = matrix(rnorm(N*K), ncol=K)
@@ -12,7 +12,10 @@ Ltrue = matrix(rnorm(N*K), ncol=K)
 Lambda = exp(tcrossprod(Ltrue,Ftrue) + matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
-fit = splitting_PMF_flashier(Y,verbose=TRUE,n_cores = 10,add_greedy_Kmax = 1,add_greedy_init = 'previous_init')
+peakRAM(fit <- splitting_PMF_flashier(Y,verbose=TRUE,n_cores = 10,add_greedy_Kmax = 1,add_greedy_init = 'previous_init',maxiter_vga = 2))
+
+# peakRAM(fit <- splitting_PMF_flashier_low_memory(Y,verbose=TRUE,n_cores = 10,maxiter_vga = 2,printevery = 1,batch_size = 100))
+
 plot(fit$K_trace)
 plot(fitted(fit$fit_flash),tcrossprod(Ltrue,Ftrue),col='grey80')
 abline(a=0,b=1)
@@ -26,13 +29,14 @@ Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
 fit = splitting_PMF_flashier(Y,verbose=TRUE,
                              ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_normal),
-                             loadings_sign = 1,maxiter = 100,n_cores = 10)
+                             loadings_sign = 1,maxiter = 100,n_cores = 10,printevery = 1)
 plot(fit$K_trace)
 plot(fitted(fit$fit_flash),tcrossprod(abs(Ltrue),Ftrue),col='grey80')
 abline(a=0,b=1)
 plot(fit$fit_flash$F.pm[,1],type='l')
 plot(fit$fit_flash$F.pm[,2],type='l')
 plot(fit$fit_flash$F.pm[,3],type='l')
+
 # test nonegative loading and factor option
 Lambda = exp(tcrossprod(abs(Ltrue),abs(Ftrue)))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)

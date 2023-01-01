@@ -2,30 +2,42 @@
 
 #'@title a matrix version of the vga solver using Newton's method
 #'@importFrom vebpm vga_pois_solver_bisection
-vga_pois_solver_mat_newton = function(M,X,S,Beta,Sigma2,maxiter=1000,tol=1e-8){
+#'@importFrom Rfast Pmin
+vga_pois_solver_mat_newton = function(M,X,S,Beta,Sigma2,maxiter=1000,tol=1e-8,return_V = TRUE){
 
-  const0 = Sigma2*X+Beta + 1
+  #X = as.matrix(X)
+  const0 = (Sigma2*X+Beta + 1)
   const1 = 1/Sigma2
   const2 = Sigma2/2
-  temp = (const0-M)
+  const3 = Beta/Sigma2
+
 
   # make sure m < sigma2*x+beta
-  idx = (M>(const0-1))
-  if(sum(idx)>0){
-    M[idx] =suppressWarnings(vga_pois_solver_bisection(c(X[idx]),c(S[idx]),c(Beta[idx]),c(Sigma2[idx]),maxiter = 10)$m)
-  }
+  M = Pmin(M,const0-1)
+  # idx = (M>(const0-1))
+  # if(sum(idx)>0){
+  #   M[idx] =suppressWarnings(vga_pois_solver_bisection(c(X[idx]),c(S[idx]),c(Beta[idx]),c(Sigma2[idx]),maxiter = 10)$m)
+  # }
   for(i in 1:maxiter){
+    temp = (const0-M)
     sexp = S*exp(M+const2/temp)
-    f = X - sexp - (M-Beta)/Sigma2
+    # f = X - sexp - (M-Beta)/Sigma2
+    f = X - sexp - M*const1 + const3
     if(max(abs(f))<tol){
       break
     }
-    f_grad = -sexp*(1+const2/temp^2)-const1
+    # f_grad = -sexp*(1+const2/temp^2)-const1
     # direction = (X - sexp - (M-Beta)/Sigma2)/(-sexp*(1+const2/temp^2)-const1)
-    M = M - f/f_grad
+    M = M - f/(-sexp*(1+const2/temp^2)-1/Sigma2)
+
+  }
+  #gc()
+  if(return_V){
+    return(list(M=M,V=Sigma2/temp))
+  }else{
+    return(M)
   }
 
-  return(list(M=M,V=Sigma2/(const0-M)))
 }
 
 #'@title vga solver for fixed iteration, not necessary to convergence
@@ -56,20 +68,20 @@ vga_pois_solver_mat_newton_fixed_iter = function(M,V,Y,S,Beta,Sigma2,maxiter=100
 #'@title a matrix version of the vga solver using Newton's method, low memory mode by partitioning the rows
 #'@importFrom vebpm vga_pois_solver_bisection
 #'@importFrom Rfast Pmin
-#'@importFrom parallel
 vga_pois_solver_mat_newton_low_memory = function(M,Y,l0,f0,EL,EF,
                                                  sigma2,var_type,
                                                  maxiter=1000,tol=1e-8){
 
   n = nrow(M)
   p = ncol(M)
-  M = Pmin(M,tcrossprod(EL,EF))
+  Beta = tcrossprod(EL,EF)
+  M = Pmin(M,Beta)
 
   if(var_type=='by_col'){
-    const0 = Y%*%Diagonal(p,sigma2)+tcrossprod(EL,EF)+ 1
+    const0 = Y%*%Diagonal(p,sigma2)+Beta+ 1
     for(i in 1:maxiter){
       sexp = l0*exp(M+(1/(const0-M))%*%Diagonal(p,sigma2/2))%*%Diagonal(p,f0)
-      f = Y-sexp + (tcrossprod(EL,EF)-M)%*%Diagonal(p,1/sigma2)
+      f = Y-sexp + (Beta-M)%*%Diagonal(p,1/sigma2)
       if(max(abs(f))<tol){
         break
       }
@@ -79,11 +91,11 @@ vga_pois_solver_mat_newton_low_memory = function(M,Y,l0,f0,EL,EF,
     }
   }
 
-  if(var_type=='by_row'){
-    const0 = sigma2*Y+tcrossprod(EL,EF)+ 1
+  if(var_type=='by_row' | var_type=='constant'){
+    const0 = sigma2*Y+Beta+ 1
     for(i in 1:maxiter){
       sexp = l0*exp(M+(1/(const0-M))*sigma2/2)%*%Diagonal(p,f0)
-      f = Y-sexp + (tcrossprod(EL,EF)-M)/sigma2
+      f = Y-sexp + (Beta-M)/sigma2
       print(range(f))
       if(max(abs(f))<tol){
         break

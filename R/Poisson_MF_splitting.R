@@ -125,7 +125,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
     rm(M_init)
   }
 
-  #const = sum(Y*log(S)) - sum(lfactorial(Y))
+  const = sum(Y*log(S)) - sum(lfactorial(Y))
   ## fit flashier on M, sigma2 with backfitting
   if(var_type=='by_row'){
     S.dim = 1
@@ -198,6 +198,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
                                                   maxiter = 1)
     }
 
+    #gc()
     # res = vga_pois_solver_mat_newton_fixed_iter_debug(M,V,Y,S,fitted(fit_flash),
     #                                  adjust_var_shape(sigma2,var_type,n,p),
     #                                  KL_LF,const,sigma2,fit_flash,var_type,
@@ -324,6 +325,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
               file=paste(save_fit_path,save_fit_name,'_fit_iter',iter,'.rds',sep=''))
     }
 
+    gc()
 
   }
 
