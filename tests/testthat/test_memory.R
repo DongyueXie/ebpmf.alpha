@@ -4,7 +4,13 @@ l0 = c(rowSums(counts))/sqrt(sum(counts))
 f0 = c(colSums(counts))/sqrt(sum(counts))
 
 library(stm)
-fit = splitting_PMF_flashier_low_memory(counts,l0,f0,printevery = 1,verbose = TRUE,maxiter = 500,add_greedy_init = 'previous_init',conv_tol = 1e-5,n_cores = 10)
+library(peakRAM)
+peakRAM(fit <- splitting_PMF_flashier_low_memory(counts,l0,f0,printevery = 1,
+                                                 verbose = TRUE,maxiter = 500,
+                                                 vga_tol=1e-3,
+                                                 init_tol=1e-3,
+                                                 conv_tol = 1e-3,
+                                                 n_cores = 1))
 saveRDS(fit,'pbmc_purified.rds')
 
 M = as.matrix(log(0.5+counts))
@@ -43,7 +49,7 @@ peakRAM::peakRAM(temp <- vga_pois_solver_mat_newton(m0,y0,s0,
 
 ##############################################
 set.seed(12345)
-N = 100000
+N = 1000
 p = 1000
 K = 2
 sigma2 = 0.1
@@ -57,10 +63,10 @@ Lambda = exp(tcrossprod(Ltrue,Ftrue) + matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 Y[Y<quantile(Y,0.98)] = 0
 sum(Y==0)/prod(dim(Y))
-
+library(peakRAM)
 gc()
-peakRAM(fit <- splitting_PMF_flashier(Y,verbose=TRUE,n_cores = 10,maxiter_vga = 3,maxiter = 3,printevery = 1,vga_tol = 0.1,init_tol = 0.1,Kmax_init=2))
+peakRAM(fit <- splitting_PMF_flashier(Y,verbose=TRUE,n_cores = 1,maxiter_vga = 3,maxiter = 3,printevery = 1,vga_tol = 0.1,init_tol = 0.1,Kmax_init=2))
 
 gc()
 Ys=Matrix(Y,sparse = T)
-peakRAM(fit <- splitting_PMF_flashier_low_memory(Ys,verbose=TRUE,n_cores = 10,maxiter_vga = 3,printevery = 1,batch_size = 1000,maxiter = 3,vga_tol = 0.1,init_tol = 0.1,Kmax_init=2))
+peakRAM(fit <- splitting_PMF_flashier_low_memory(Ys,verbose=TRUE,n_cores = 1,maxiter_vga = 3,printevery = 1,batch_size = 1000,maxiter = 3,vga_tol = 0.1,init_tol = 0.1,Kmax_init=2))
