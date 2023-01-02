@@ -100,11 +100,10 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
       rm(init_val)
     }
     if(var_type=='by_col'){
-
+      if(verbose){
+        cat('Solving VGA for column 1...')
+      }
       if(n_cores>1){
-        if(verbose){
-          cat('Solving VGA for column 1...')
-        }
         init_val = mclapply(1:p,function(i){
           if(verbose){
             if(i%%printevery==0){
@@ -121,6 +120,11 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
         M = matrix(nrow=n,ncol=p)
         sigma2_init = rep(0,p)
         for(j in 1:p){
+          if(verbose){
+            if(j%%printevery==0){
+              cat(paste(j,'...'))
+            }
+          }
           fit = suppressWarnings(pois_mean_GG(Y[,j],l0*f0[j],prior_mean = 0,prior_var = NULL,tol=init_tol))
           M[,j] = fit$posterior$mean_log
           sigma2_init[j] = fit$fitted_g$var
@@ -275,6 +279,7 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
       break
     }
 
+    gc()
     # if(iter>1){
     #   print(paste('iteration:',iter))
     #   print(paste('vga,elbo is',round(calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type),3)))
