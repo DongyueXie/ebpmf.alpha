@@ -122,7 +122,7 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
         sigma2_init = rep(0,p)
         for(j in 1:p){
           fit = suppressWarnings(pois_mean_GG(Y[,j],l0*f0[j],prior_mean = 0,prior_var = NULL,tol=init_tol))
-          M[j,] = fit$posterior$mean_log
+          M[,j] = fit$posterior$mean_log
           sigma2_init[j] = fit$fitted_g$var
         }
         rm(fit)

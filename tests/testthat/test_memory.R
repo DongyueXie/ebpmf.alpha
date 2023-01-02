@@ -49,7 +49,7 @@ peakRAM::peakRAM(temp <- vga_pois_solver_mat_newton(m0,y0,s0,
 
 ##############################################
 set.seed(12345)
-N = 1000
+N = 1001
 p = 1000
 K = 2
 sigma2 = 0.1
