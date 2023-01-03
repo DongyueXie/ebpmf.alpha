@@ -26,8 +26,8 @@ splitting_PMF_flashier_low_memory(
   maxiter_backfitting = 1,
   maxiter_vga = 1,
   conv_tol = 1e-05,
-  init_tol = 0.001,
-  vga_tol = 0.001,
+  init_tol = 1e-05,
+  vga_tol = 1e-05,
   verbose_flash = 0,
   printevery = 10,
   verbose = FALSE,
@@ -39,6 +39,8 @@ splitting_PMF_flashier_low_memory(
 }
 \arguments{
 \item{Y}{count data matrix}
+
+\item{l0, f0}{The known scaling loadings and factors.}
 
 \item{sigma2}{the variance term}
 
@@ -58,11 +60,11 @@ splitting_PMF_flashier_low_memory(
 
 \item{add_greedy_every}{perform flash add greedy every `add_greedy_every` iterations.}
 
+\item{batch_size}{reduce memory usage for vga step by looping subsets of dataset.}
+
 \item{maxiter, maxiter_backfitting, maxiter_vga}{max iterations for the splitting, backfitting, vga.}
 
 \item{conv_tol, init_tol, vga_tol}{tolerance for convergence, initialization vga fit, and vga fit in iterations}
-
-\item{S}{The known scaling factor matrix, background frequency.}
 }
 \value{
 fitted object

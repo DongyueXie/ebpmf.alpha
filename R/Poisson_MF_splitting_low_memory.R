@@ -1,6 +1,6 @@
 #'@title Fit Sparse Poisson matrix factorization low memory version
 #'@param Y count data matrix
-#'@param S The known scaling factor matrix, background frequency.
+#'@param l0,f0 The known scaling loadings and factors.
 #'@param sigma2 the variance term
 #'@param est_sigma2 whether estimate the variance term or fix it at sigma2
 #'@param ebnm.fn see `?flash`.
@@ -12,6 +12,7 @@
 #'@param add_greedy_every perform flash add greedy every `add_greedy_every` iterations.
 #'@param maxiter,maxiter_backfitting,maxiter_vga max iterations for the splitting, backfitting, vga.
 #'@param conv_tol,init_tol,vga_tol tolerance for convergence, initialization vga fit, and vga fit in iterations
+#'@param batch_size reduce memory usage for vga step by looping subsets of dataset.
 #'@return fitted object
 #'@import flashier
 #'@import magrittr
@@ -38,8 +39,8 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
                                   maxiter_backfitting = 1,
                                   maxiter_vga = 1,
                                   conv_tol=1e-5,
-                                  init_tol = 1e-3,
-                                  vga_tol = 1e-3,
+                                  init_tol = 1e-5,
+                                  vga_tol = 1e-5,
                                   verbose_flash=0,
                                   printevery=10,
                                   verbose=FALSE,
@@ -128,8 +129,8 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
           fit = suppressWarnings(pois_mean_GG(Y[,j],l0*f0[j],prior_mean = 0,prior_var = NULL,tol=init_tol))
           M[,j] = fit$posterior$mean_log
           sigma2_init[j] = fit$fitted_g$var
+          rm(fit)
         }
-        rm(fit)
       }
     }
     gc()
@@ -146,7 +147,7 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
     rm(M_init)
   }
 
-  # const = sum(Diagonal(n,log(l0))%*%Y) + sum(Y%*%Diagonal(p,log(f0)))- sum_lfactorial_sparseMat(Y)
+   const = sum(Diagonal(n,log(l0))%*%Y) + sum(Y%*%Diagonal(p,log(f0)))- sum_lfactorial_sparseMat(Y)
 
   if(var_type=='by_row'){
     S.dim = 1
@@ -215,69 +216,78 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
     t0 = Sys.time()
     if(n_batch > 1){
       v_sum=0
+      sym = 0
+      ssexp = 0
+      slogv = 0
       for(i_b in 1:n_batch){
         b = batches[[i_b]]
         # this is for speeding up
         y_b = as.matrix(Y[[i_b]])
         beta_b = tcrossprod(fit_flash$flash.fit$EF[[1]][b,],fit_flash$flash.fit$EF[[2]])
         sigma2_b = ifelse(var_type=='by_row',sigma2[b],adjust_var_shape(sigma2,var_type,length(b),p))
-
-        fit_flash$flash.fit$Y[b,] = vga_pois_solver_mat_newton(fit_flash$flash.fit$Y[b,],
+        res = vga_pois_solver_mat_newton(fit_flash$flash.fit$Y[b,],
                                                                y_b,tcrossprod(l0[[i_b]],f0),
                                                                 beta_b,
                                                                 sigma2_b,
-                                                                maxiter=maxiter_vga,tol=vga_tol,return_V=FALSE)
+                                                                maxiter=maxiter_vga,tol=vga_tol,return_V=TRUE)
+        fit_flash$flash.fit$Y[b,] = res$M
+        sym = sym + sum(y_b*res$M)
+        ssexp = ssexp + sum(tcrossprod(l0[[i_b]],f0)*exp(res$M+res$V/2))
+        slogv = slogv + sum(log(res$V)/2+0.9189385)
         if(est_sigma2){
           if(var_type=='by_row'){
-            sigma2[b] = (V_M(fit_flash$flash.fit$Y[b,],y_b,beta_b,sigma2_b,var_type='by_row')+fit_flash$flash.fit$R2[b])/p
-          }else{
-            v_sum=v_sum+V_M(fit_flash$flash.fit$Y[b,],y_b,beta_b,sigma2_b,var_type=var_type)
+            # sigma2[b] = (V_M(fit_flash$flash.fit$Y[b,],y_b,beta_b,sigma2_b,var_type='by_row')+fit_flash$flash.fit$R2[b])/p
+            v_sum = c(v_sum,rowSums(res$V))
+          }else if(var_type=='by_col'){
+            v_sum=v_sum+colSums(res$V)
+          }else if(var_type=='constant'){
+            v_sum=v_sum+sum(res$V)
           }
         }
       }
       rm(y_b)
       rm(beta_b)
       rm(sigma2_b)
+      rm(res)
       if(est_sigma2){
         if(var_type=='constant'){
-          sigma2 = (v_sum+fit_flash$flash.fit$R2 +sum(fit_flash$flash.fit$R2))/(n*p)
+          sigma2 = (v_sum+sum(fit_flash$flash.fit$R2))/(n*p)
         }else if(var_type=='by_col'){
           sigma2 = (v_sum+fit_flash$flash.fit$R2)/n
+        }else if(var_type=='by_row'){
+          v_sum = v_sum[-1]
+          sigma2 = (v_sum+fit_flash$flash.fit$R2)/p
         }
       }
     }else{
-      #beta_b = tcrossprod(fit_flash$flash.fit$EF[[1]],fit_flash$flash.fit$EF[[2]])
-      beta_b = fitted(fit_flash)
-      sigma2_b = ifelse(var_type=='by_row',sigma2,adjust_var_shape(sigma2,var_type,n,p))
-      fit_flash$flash.fit$Y = vga_pois_solver_mat_newton(fit_flash$flash.fit$Y,Y,tcrossprod(l0,f0),beta_b,
-                                                         sigma2_b,
-                                                         maxiter = maxiter_vga,
-                                                         tol=vga_tol,
-                                                         return_V=FALSE)
-      # update sigma2
-      if(est_sigma2){
-        if(var_type=='constant'){
-          sigma2 = (V_M(fit_flash$flash.fit$Y,Y,beta_b,sigma2_b,var_type='constant')+sum(fit_flash$flash.fit$R2))/(n*p)
-        }else if(var_type=='by_row'){
-          sigma2 = (V_M(fit_flash$flash.fit$Y,Y,beta_b,sigma2_b,var_type='by_row')+fit_flash$flash.fit$R2)/p
-        }else if(var_type=='by_col'){
-          sigma2 = (V_M(fit_flash$flash.fit$Y,Y,beta_b,sigma2_b,var_type='by_col')+fit_flash$flash.fit$R2)/n
-        }else{
-          stop('Non-supported var type')
-        }
-      }
-      rm(beta_b)
-      rm(sigma2_b)
+      # #beta_b = tcrossprod(fit_flash$flash.fit$EF[[1]],fit_flash$flash.fit$EF[[2]])
+      # beta_b = fitted(fit_flash)
+      # sigma2_b = ifelse(var_type=='by_row',sigma2,adjust_var_shape(sigma2,var_type,n,p))
+      # fit_flash$flash.fit$Y = vga_pois_solver_mat_newton(fit_flash$flash.fit$Y,Y,tcrossprod(l0,f0),beta_b,
+      #                                                    sigma2_b,
+      #                                                    maxiter = maxiter_vga,
+      #                                                    tol=vga_tol,
+      #                                                    return_V=FALSE)
+      # # update sigma2
+      # if(est_sigma2){
+      #   if(var_type=='constant'){
+      #     sigma2 = (V_M(fit_flash$flash.fit$Y,Y,beta_b,sigma2_b,var_type='constant')+sum(fit_flash$flash.fit$R2))/(n*p)
+      #   }else if(var_type=='by_row'){
+      #     sigma2 = (V_M(fit_flash$flash.fit$Y,Y,beta_b,sigma2_b,var_type='by_row')+fit_flash$flash.fit$R2)/p
+      #   }else if(var_type=='by_col'){
+      #     sigma2 = (V_M(fit_flash$flash.fit$Y,Y,beta_b,sigma2_b,var_type='by_col')+fit_flash$flash.fit$R2)/n
+      #   }else{
+      #     stop('Non-supported var type')
+      #   }
+      # }
+      # rm(beta_b)
+      # rm(sigma2_b)
     }
 
     t1 = Sys.time()
     run_time_vga[iter] = difftime(t1,t0,units='secs')
 
-    # check convergence
-    obj[iter + 1] =mean(abs(sigma2-sigma2_old))
-    if(obj[iter + 1]< conv_tol){
-      break
-    }
+
 
     gc()
     # if(iter>1){
@@ -296,7 +306,7 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
     t2 = Sys.time()
     run_time_flash_init_factor[iter] = difftime(t2,t0,units='secs')
 
-    if(iter%%add_greedy_every==0){
+    if(iter%%add_greedy_every==0 & fit_flash$n.factors < Kmax_init){
       if(add_greedy_init=='previous_init'){
         if(K_changed){
           init_vals = do.call(init.fn.flash,list(fit_flash$flash.fit))
@@ -326,18 +336,24 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
     run_time_flash_nullcheck[iter] = difftime(t5,t4,units='secs')
 
     K_trace[iter+1] = fit_flash$n.factors
-    # KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
+    KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
     # if(iter>1){
     #   print(paste('flash,elbo is',round(calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type),3)))
     #   cat("----------------------------")
     #   cat("\n")
     # }
 
+    # check convergence
+    obj[iter + 1] = calc_split_PMF_obj_flashier_low_memory(n,p,sym,ssexp,slogv,v_sum,sigma2,fit_flash$flash.fit$R2,KL_LF,const,var_type)
+    if((obj[iter + 1]-obj[iter])< conv_tol){
+      break
+    }
     if(verbose){
       if(iter%%printevery==0){
-        print(paste('iter ',iter, ', sigma2 mean abs diff=',round(obj[iter+1],log10(1/conv_tol)),", K=",fit_flash$n.factors,sep = ''))
+        print(paste('iter ',iter, ', elbo=',round(obj[iter+1],log10(1/conv_tol)),", K=",fit_flash$n.factors,sep = ''))
       }
     }
+
 
     gc()
 
@@ -345,12 +361,11 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
 
   end_time = Sys.time()
   return(list(fit_flash=fit_flash,
+              elbo=obj[length(obj)],
               K_trace=K_trace,
-              obj_trace=obj,
+              elbo_trace=obj,
               sigma2 = sigma2,
               run_time = difftime(end_time,start_time,units='auto'),
-              #M=M,V=V,
-              #init_val=init_val,
               run_time_break_down = list(run_time_vga_init = run_time_vga_init,
                                          run_time_flash_init = run_time_flash_init,
                                          run_time_vga = run_time_vga,
@@ -358,6 +373,28 @@ splitting_PMF_flashier_low_memory = function(Y,l0=NULL,f0=NULL,
                                          run_time_flash_greedy = run_time_flash_greedy,
                                          run_time_flash_backfitting = run_time_flash_backfitting,
                                          run_time_flash_nullcheck = run_time_flash_nullcheck)))
+}
+
+
+calc_split_PMF_obj_flashier_low_memory = function(n,p,sym,ssexp,slogv,sv,sigma2,R2,KL_LF,const,var_type){
+  # R2 = fit_flash$flash.fit$R2
+  # n = nrow(Y)
+  # p = ncol(Y)
+  if(var_type=='by_row'){
+    #sv = rowSums(V)
+    ss = p
+  }else if(var_type=='by_col'){
+    #sv = colSums(V)
+    ss = n
+  }else if(var_type=='constant'){
+    #sv = sum(V)
+    ss = n*p
+  }else{
+    stop('Non-supported var type')
+  }
+  val = sym - ssexp + slogv + 0.5*n*p - sum(ss*log(2*pi*sigma2)/2)- sum(sv/2/sigma2) - sum(R2/2/sigma2) + const+ KL_LF
+  #val = sum(Y*M - S*exp(M+V/2)   + log(2*pi*V)/2 + 0.5 ) - sum(ss*log(2*pi*sigma2)/2)- sum(sv/2/sigma2) - sum(R2/2/sigma2) + const+ KL_LF
+  return(val)
 }
 
 # V_M = function(M,Y,EL,EF,sigma2,var_type='by_col'){

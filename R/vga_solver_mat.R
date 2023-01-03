@@ -28,7 +28,7 @@ vga_pois_solver_mat_newton = function(M,X,S,Beta,Sigma2,maxiter=1000,tol=1e-8,re
     }
     # f_grad = -sexp*(1+const2/temp^2)-const1
     # direction = (X - sexp - (M-Beta)/Sigma2)/(-sexp*(1+const2/temp^2)-const1)
-    M = M - f/(-sexp*(1+const2/temp^2)-1/Sigma2)
+    M = M - f/(-sexp*(1+const2/temp^2)-const1)
 
   }
   #gc()

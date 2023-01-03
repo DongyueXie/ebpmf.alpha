@@ -244,7 +244,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
     t2 = Sys.time()
     run_time_flash_init_factor[iter] = difftime(t2,t0,units='secs')
 
-    if(iter%%add_greedy_every==0){
+    if(iter%%add_greedy_every==0 & fit_flash$n.factors < Kmax_init){
       if(add_greedy_init=='previous_init'){
         if(K_changed){
           init_vals = do.call(init.fn.flash,list(fit_flash$flash.fit))
