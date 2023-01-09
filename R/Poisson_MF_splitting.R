@@ -22,6 +22,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
                                   var_type='by_col',
                                   sigma2=NULL,
                                   est_sigma2 = TRUE,
+                                  return_sigma2_trace = FALSE,
                                   ebnm.fn = ebnm::ebnm_point_normal,
                                   loadings_sign = 0,
                                   factors_sign = 0,
@@ -42,6 +43,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
                                   printevery=10,
                                   verbose=FALSE,
                                   n_cores = 1,
+                                  save_init_val = FALSE,
                                   save_fit_every = Inf,
                                   save_fit_path = NULL,
                                   save_fit_name = NULL){
@@ -59,70 +61,83 @@ splitting_PMF_flashier = function(Y,S=NULL,
     S = matrix(S,nrow=n,ncol=p)
   }
 
-  if(is.null(sigma2)|is.null(M_init)){
-    if(verbose){
-      cat('Initializing...')
-    }
-    # pre-estimate sigma2, assuming LF = 0?.
-    if(var_type=='constant'){
-      if(verbose){
-        cat('Solving VGA...')
-      }
-      init_val = suppressWarnings(pois_mean_GG(as.vector(Y),as.vector(S),prior_mean = 0,prior_var = NULL,tol=init_tol))
-      sigma2_init = init_val$fitted_g$var
-      M0 = matrix(init_val$posterior$mean_log,nrow=n,ncol=p)
-      V = matrix(init_val$posterior$var_log,nrow=n,ncol=p)
-    }
-    if(var_type=='by_row'){
-      if(verbose){
-        cat('Solving VGA for row 1...')
-      }
-      init_val = mclapply(1:n,function(i){
-        if(verbose){
-          if(i%%printevery==0){
-            cat(paste(i,'...'))
-          }
-        }
-        fit = suppressWarnings(pois_mean_GG(Y[i,],S[i,],prior_mean = 0,prior_var = NULL,tol=init_tol))
-        return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
-      },mc.cores = n_cores)
-      sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
-      M0 = do.call(rbind,lapply(init_val,function(fit){fit$mean_log}))
-      V = do.call(rbind,lapply(init_val,function(fit){fit$var_log}))
-    }
-    if(var_type=='by_col'){
-      if(verbose){
-        cat('Solving VGA for column 1...')
-      }
-      init_val = mclapply(1:p,function(i){
-        if(verbose){
-          if(i%%printevery==0){
-            cat(paste(i,'...'))
-          }
-        }
-        fit = suppressWarnings(pois_mean_GG(Y[,i],S[,i],prior_mean = 0,prior_var = NULL,tol=init_tol))
-        return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
-      },mc.cores = n_cores)
-      sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
-      M0 = do.call(cbind,lapply(init_val,function(fit){fit$mean_log}))
-      V = do.call(cbind,lapply(init_val,function(fit){fit$var_log}))
-    }
-  }
+  init_val = splitting_PMF_init(Y,S,sigma2,
+                                var_type,
+                                M_init,
+                                verbose,
+                                n_cores,
+                                init_tol,
+                                printevery)
+  # if(is.null(sigma2)|is.null(M_init)){
+  #   if(verbose){
+  #     cat('Initializing...')
+  #   }
+  #   # pre-estimate sigma2, assuming LF = 0?.
+  #   if(var_type=='constant'){
+  #     if(verbose){
+  #       cat('Solving VGA...')
+  #     }
+  #     init_val = suppressWarnings(pois_mean_GG(as.vector(Y),as.vector(S),prior_mean = 0,prior_var = NULL,tol=init_tol))
+  #     sigma2_init = init_val$fitted_g$var
+  #     M0 = matrix(init_val$posterior$mean_log,nrow=n,ncol=p)
+  #     V = matrix(init_val$posterior$var_log,nrow=n,ncol=p)
+  #   }
+  #   if(var_type=='by_row'){
+  #     if(verbose){
+  #       cat('Solving VGA for row 1...')
+  #     }
+  #     init_val = mclapply(1:n,function(i){
+  #       if(verbose){
+  #         if(i%%printevery==0){
+  #           cat(paste(i,'...'))
+  #         }
+  #       }
+  #       fit = suppressWarnings(pois_mean_GG(Y[i,],S[i,],prior_mean = 0,prior_var = NULL,tol=init_tol))
+  #       return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log,var_log = fit$posterior$mean_log))
+  #     },mc.cores = n_cores)
+  #     sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
+  #     M0 = do.call(rbind,lapply(init_val,function(fit){fit$mean_log}))
+  #     V = do.call(rbind,lapply(init_val,function(fit){fit$var_log}))
+  #   }
+  #   if(var_type=='by_col'){
+  #     if(verbose){
+  #       cat('Solving VGA for column 1...')
+  #     }
+  #     init_val = mclapply(1:p,function(i){
+  #       if(verbose){
+  #         if(i%%printevery==0){
+  #           cat(paste(i,'...'))
+  #         }
+  #       }
+  #       fit = suppressWarnings(pois_mean_GG(Y[,i],S[,i],prior_mean = 0,prior_var = NULL,tol=init_tol))
+  #       return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log,var_log = fit$posterior$var_log))
+  #     },mc.cores = n_cores)
+  #     sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
+  #     M0 = do.call(cbind,lapply(init_val,function(fit){fit$mean_log}))
+  #     V = do.call(cbind,lapply(init_val,function(fit){fit$var_log}))
+  #   }
+  # }
   run_time_vga_init = difftime(Sys.time(),start_time,units = 'secs')
-  init_val = list()
-  if(is.null(sigma2)){
-    sigma2 = sigma2_init
-    est_sigma2 = TRUE
-    init_val$sigma2_init = sigma2_init
-    rm(sigma2_init)
-  }
-  if(is.null(M_init)){
-    M = M0
-    init_val$M_init = M0
-    rm(M0)
-  }else{
-    M = M_init
-    rm(M_init)
+  #init_val = list()
+  # if(is.null(sigma2)){
+  #   sigma2 = sigma2_init
+  #   est_sigma2 = TRUE
+  #   init_val$sigma2_init = sigma2_init
+  #   rm(sigma2_init)
+  # }
+  # if(is.null(M_init)){
+  #   M = M0
+  #   init_val$M_init = M0
+  #   rm(M0)
+  # }else{
+  #   M = M_init
+  #   rm(M_init)
+  # }
+  sigma2 = init_val$sigma2_init
+  M = init_val$M_init
+  V = init_val$V_init
+  if(!save_init_val){
+    init_val = NULL
   }
 
   const = sum(Y*log(S)) - sum(lfactorial(Y))
@@ -149,7 +164,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
     init.fn.flash = function(f){init.fn.default(f, dim.signs = c(loadings_sign, factors_sign))}
   }
 
-
+  #browser()
   #print(sigma2)
   t0 = Sys.time()
   fit_flash = suppressWarnings(flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
@@ -163,6 +178,7 @@ splitting_PMF_flashier = function(Y,S=NULL,
   }
 
   K_trace = fit_flash$n.factors
+  sigma2_trace = sigma2
   K_changed = TRUE
   obj = -Inf
 
@@ -226,6 +242,9 @@ splitting_PMF_flashier = function(Y,S=NULL,
       }else{
         stop('Non-supported var type')
       }
+    }
+    if(return_sigma2_trace){
+      sigma2_trace = rbind(sigma2_trace,sigma2)
     }
     # if(iter>1){
     #   print(paste('sigma2,elbo is',round(calc_split_PMF_obj_flashier(Y,S,sigma2,M,V,fit_flash,KL_LF,const,var_type),3)))
@@ -335,8 +354,8 @@ splitting_PMF_flashier = function(Y,S=NULL,
               K_trace=K_trace,
               elbo_trace=obj,
               sigma2 = sigma2,
+              sigma2_trace = sigma2_trace,
               run_time = difftime(end_time,start_time,units='auto'),
-              #M=M,V=V,
               init_val=init_val,
               run_time_break_down = list(run_time_vga_init = run_time_vga_init,
                                          run_time_flash_init = run_time_flash_init,

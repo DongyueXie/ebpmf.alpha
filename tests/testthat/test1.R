@@ -1,3 +1,4 @@
+library(peakRAM)
 set.seed(12345)
 N = 1000
 p = 100
@@ -12,7 +13,7 @@ Ltrue = matrix(rnorm(N*K), ncol=K)
 Lambda = exp(tcrossprod(Ltrue,Ftrue) + matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
-peakRAM(fit <- splitting_PMF_flashier(Y,verbose=TRUE,n_cores = 10,add_greedy_Kmax = 1,add_greedy_init = 'previous_init',maxiter_vga = 2))
+peakRAM(fit <- splitting_PMF_flashier(Y,verbose=TRUE,n_cores = 10,maxiter_vga = 10))
 
 # peakRAM(fit <- splitting_PMF_flashier_low_memory(Y,verbose=TRUE,n_cores = 10,maxiter_vga = 2,printevery = 1,batch_size = 100))
 

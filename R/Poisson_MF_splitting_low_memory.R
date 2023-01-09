@@ -413,7 +413,7 @@ V_M = function(M,Y,Beta,Sigma2,var_type='by_col'){
     return(colSums(Sigma2/(Y*Sigma2+Beta-M+1)))
   }
   if(var_type=='by_row'|var_type=='constant'){
-    return(rowSums(sigma2/(simga2*Y-M+Beta+1)))
+    return(rowSums(Sigma2/(Sigma2*Y-M+Beta+1)))
   }
 }
 

@@ -10,6 +10,7 @@ splitting_PMF_flashier(
   var_type = "by_col",
   sigma2 = NULL,
   est_sigma2 = TRUE,
+  return_sigma2_trace = FALSE,
   ebnm.fn = ebnm::ebnm_point_normal,
   loadings_sign = 0,
   factors_sign = 0,
@@ -30,6 +31,7 @@ splitting_PMF_flashier(
   printevery = 10,
   verbose = FALSE,
   n_cores = 1,
+  save_init_val = FALSE,
   save_fit_every = Inf,
   save_fit_path = NULL,
   save_fit_name = NULL
