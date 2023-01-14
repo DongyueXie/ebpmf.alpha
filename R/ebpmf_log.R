@@ -56,7 +56,10 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                     cap_var_mean_ratio = 0.1,
                     save_init_val = FALSE,
                     return_sigma2_trace = FALSE,
-                    garbage_collection_every = 10){
+                    garbage_collection_every = 10,
+                    save_fit_every = Inf,
+                    save_fit_path = NULL,
+                    save_fit_name = NULL){
 
   start_time = Sys.time()
 
@@ -309,6 +312,24 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
       }
     }
 
+
+    if(iter%%save_fit_every==0){
+      saveRDS(list(fit_flash=fit_flash,
+                   elbo=obj[length(obj)],
+                   K_trace=K_trace,
+                   elbo_trace=obj,
+                   sigma2 = sigma2,
+                   sigma2_trace = sigma2_trace,
+                   run_time = difftime(Sys.time(),start_time,units='auto'),
+                   run_time_break_down = list(run_time_vga_init = run_time_vga_init,
+                                              run_time_flash_init = run_time_flash_init,
+                                              run_time_vga = run_time_vga,
+                                              run_time_flash_init_factor = run_time_flash_init_factor,
+                                              run_time_flash_greedy = run_time_flash_greedy,
+                                              run_time_flash_backfitting = run_time_flash_backfitting,
+                                              run_time_flash_nullcheck = run_time_flash_nullcheck)),
+              file=paste(save_fit_path,save_fit_name,'_iter',iter,'.rds',sep=''))
+    }
 
     if(iter%%garbage_collection_every==0){
       gc()

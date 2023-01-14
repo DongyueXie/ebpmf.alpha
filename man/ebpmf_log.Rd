@@ -37,7 +37,10 @@ ebpmf_log(
   cap_var_mean_ratio = 0.1,
   save_init_val = FALSE,
   return_sigma2_trace = FALSE,
-  garbage_collection_every = 10
+  garbage_collection_every = 10,
+  save_fit_every = Inf,
+  save_fit_path = NULL,
+  save_fit_name = NULL
 )
 }
 \arguments{
