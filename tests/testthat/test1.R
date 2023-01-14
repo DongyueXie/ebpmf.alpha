@@ -13,7 +13,7 @@ Ltrue = matrix(rnorm(N*K), ncol=K)
 Lambda = exp(tcrossprod(Ltrue,Ftrue) + matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
-peakRAM(fit <- splitting_PMF_flashier(Y,verbose=TRUE,n_cores = 10,maxiter_vga = 10))
+peakRAM(fit <- ebpmf_log(Y,verbose=TRUE))
 
 # peakRAM(fit <- splitting_PMF_flashier_low_memory(Y,verbose=TRUE,n_cores = 10,maxiter_vga = 2,printevery = 1,batch_size = 100))
 
@@ -25,12 +25,12 @@ for(k in 1:fit$fit_flash$n.factors){
   plot(fit$fit_flash$F.pm[,k],type='l')
 }
 # test nonegative loading option
-Lambda = exp(tcrossprod(abs(Ltrue),Ftrue))
+Lambda = exp(tcrossprod(abs(Ltrue),Ftrue)+ matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
-fit = splitting_PMF_flashier(Y,verbose=TRUE,
+fit = ebpmf_log(Y,verbose=TRUE,
                              ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_normal),
-                             loadings_sign = 1,maxiter = 100,n_cores = 10,printevery = 1)
+                             loadings_sign = 1,maxiter = 100,printevery = 1,return_sigma2_trace = T)
 plot(fit$K_trace)
 plot(fitted(fit$fit_flash),tcrossprod(abs(Ltrue),Ftrue),col='grey80')
 abline(a=0,b=1)
@@ -39,9 +39,14 @@ plot(fit$fit_flash$F.pm[,2],type='l')
 plot(fit$fit_flash$F.pm[,3],type='l')
 
 # test nonegative loading and factor option
-Lambda = exp(tcrossprod(abs(Ltrue),abs(Ftrue)))
+Lambda = exp(tcrossprod(abs(Ltrue),abs(Ftrue))+ matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
-
+fit = ebpmf_log(Y,verbose=TRUE,
+                ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_exponential),
+                loadings_sign = 1,factors_sign = 1,maxiter = 100,printevery = 1,return_sigma2_trace = T)
+for(k in 1:fit$fit_flash$n.factors){
+  plot(fit$fit_flash$F.pm[,k],type='l')
+}
 #########################
 # use point_exponential prior always gives an error. I suspect it's related to the optimization method.
 # I changed optmethod to trust and it did not show errors. But instead returned an increasing number of factors.
