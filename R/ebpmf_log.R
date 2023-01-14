@@ -314,7 +314,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
 
 
     if(iter%%save_fit_every==0){
-      saveRDS(list(fit_flash=fit_flash,
+      saveRDS(list(fit_flash=list(L.pm=fit_flash$L.pm,F.pm = fit_flash$F.pm,pve = fit_flash$pve),
                    elbo=obj[length(obj)],
                    K_trace=K_trace,
                    elbo_trace=obj,
@@ -422,7 +422,7 @@ sum_lfactorial_sparseMat = function(Y){
   sum(lfactorial(Y@x))
 }
 
-#'@title adjust var shape for vga. Can be improved to save memory
+#'@title adjust var shape for vga. For computation purpose.
 adjust_var_shape = function(sigma2,var_type,n,p){
   if(var_type=='constant'){
     sigma2 = matrix(sigma2,nrow=n,ncol=p)

@@ -2,10 +2,10 @@
 % Please edit documentation in R/ebpmf_log.R
 \name{adjust_var_shape}
 \alias{adjust_var_shape}
-\title{adjust var shape for vga. Can be improved to save memory}
+\title{adjust var shape for vga. For computation purpose.}
 \usage{
 adjust_var_shape(sigma2, var_type, n, p)
 }
 \description{
-adjust var shape for vga. Can be improved to save memory
+adjust var shape for vga. For computation purpose.
 }
