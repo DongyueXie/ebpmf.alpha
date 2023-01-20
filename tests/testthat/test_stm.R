@@ -1,6 +1,6 @@
 set.seed(123)
 n = 120
-p = 256
+p = 300
 K= 3
 L = matrix(0, nrow=n, ncol=K)
 FF = matrix(0, nrow=K, ncol=p)
@@ -16,11 +16,11 @@ FF = pmax(FF,0)
 lambda = L %*% FF
 X = matrix(rpois(n=length(lambda),lambda),nrow=n)
 
-fit0 = ebpmf_identity(X,3,printevery = 1)
+fit0 = ebpmf_identity(X,3,printevery = 1,convergence_criteria = 'mKLabs',ebpm.fn = vebpm::pois_mean_GG,smooth_f = F)
 plot(fit0$EF[,1],type='l')
 plot(fit0$EF[,2],type='l')
 plot(fit0$EF[,3],type='l')
-fit1 = ebpmf_identity(X,3,printevery = 1,ebpm.fn = c(ebpm::ebpm_point_gamma,pois_smooth_split),convergence_criteria = 'Labs')
+fit1 = ebpmf_identity(X,3,printevery = 1,ebpm.fn = c(ebpm::ebpm_point_gamma,smashrgen::pois_smooth_split),convergence_criteria = 'mKLabs')
 plot(fit1$EF[,1],type='l')
 plot(fit1$EF[,2],type='l')
 plot(fit1$EF[,3],type='l')

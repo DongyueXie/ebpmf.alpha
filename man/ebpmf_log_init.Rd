@@ -14,7 +14,9 @@ ebpmf_log_init(
   verbose,
   n_cores,
   init_tol,
-  printevery
+  printevery,
+  L_init = NULL,
+  F_init = NULL
 )
 }
 \description{

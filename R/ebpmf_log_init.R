@@ -8,7 +8,9 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
                               verbose,
                               n_cores,
                               init_tol,
-                              printevery){
+                              printevery,
+                          L_init=NULL,
+                          F_init=NULL){
   n = nrow(Y)
   p = ncol(Y)
   # we need a. M; b. sigma2
@@ -18,7 +20,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
   }
 
   # then we fit poisGG with mean = 0, var =sigma2
-  if(is.null(M_init)){
+  if(is.null(M_init)&is.null(L_init)&is.null(F_init)){
     if(verbose){
       cat('Initializing M...')
     }
@@ -87,7 +89,13 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
   }
   ## case 3: M_init is given, sigma2 is unknown, this case is useful when using glmpca for initialization.
   ## In this case we will run flash to init sigma2
-  return(list(sigma2_init=NULL,M_init=M_init))
+  if(!is.null(M_init)&is.null(sigma2)){
+    return(list(sigma2_init=NULL,M_init=M_init))
+  }
+  ## case 4: if L_init and F_init are given
+  if(!is.null(L_init)&!is.null(F_init)){
+    # do we need this case?
+  }
   # if(!is.null(M_init)){
   #   if(verbose){
   #     cat('Initializing sigma2...')

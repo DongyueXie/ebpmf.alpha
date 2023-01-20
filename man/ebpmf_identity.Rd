@@ -7,16 +7,18 @@
 ebpmf_identity(
   X,
   K,
-  S = NULL,
-  init = "scd",
-  init_loss = "mkl",
+  init = "fasttopics",
   maxiter = 100,
-  tol = 1e-08,
-  ebpm.fn = ebpm::ebpm_point_gamma,
+  maxiter_init = 30,
+  tol = 0.001,
+  ebpm.fn = c(ebpm::ebpm_point_gamma, smashrgen::pois_smooth_split),
   fix_F = FALSE,
+  smooth_l = FALSE,
+  smooth_f = TRUE,
+  smooth_control = list(),
   printevery = 10,
   verbose = TRUE,
-  convergence_criteria = "Labs"
+  convergence_criteria = "mKLabs"
 )
 }
 \arguments{
@@ -24,31 +26,21 @@ ebpmf_identity(
 
 \item{K}{number of factors/ranks}
 
-\item{S}{background}
-
 \item{init}{initialization methods, 'lee','scd' from package NNLM, or 'uniform' randomly initialize; or provide init as a list with L_init and F_init.}
-
-\item{init_loss}{loss function of the initialization method, either mkl or mse.}
 
 \item{maxiter}{maximum iterations}
 
 \item{tol}{stop criteria}
 
+\item{ebpm.fn}{specify functions to use for solving the poisson subproblems}
+
 \item{fix_F}{if TRUE, F will not be updated.}
 
-\item{smooth_method}{splitting or bmsm}
+\item{smooth_l, smooth_f}{whether smooth l or f, must match the functions in ebpm.fn}
 
-\item{bmsm_control}{control parameters of BMSM, see bmsm_control_default()}
+\item{init_loss}{loss function of the initialization method, either mkl or mse.}
 
-\item{ebpm_method}{point_gamma or two_gamma}
-
-\item{ebpm_control}{control parameters of ebpm, see ebpm_control_default()}
-
-\item{splitting_control}{control parameters of smashgen, see splitting_control_default()}
-
-\item{smooth_f, smooth_l}{whether to get smooth estimate of loadings or factors.}
-
-\item{nugget}{whether to assume nugget effects}
+\item{warm_start}{whether warm starts the ebpm. Useful for when smooth_l or f is true.}
 
 \item{return_all}{whether return all outputs or simplified ones}
 }

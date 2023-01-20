@@ -2,19 +2,14 @@
 #'@description This function fits Poisson Topic Model with smooth Loading or Factors
 #'@param X count matrix
 #'@param K number of factors/ranks
-#'@param S background
 #'@param init initialization methods, 'lee','scd' from package NNLM, or 'uniform' randomly initialize; or provide init as a list with L_init and F_init.
 #'@param init_loss loss function of the initialization method, either mkl or mse.
 #'@param maxiter maximum iterations
 #'@param tol stop criteria
-#'@param smooth_method splitting or bmsm
+#'@param ebpm.fn specify functions to use for solving the poisson subproblems
 #'@param fix_F if TRUE, F will not be updated.
-#'@param bmsm_control control parameters of BMSM, see bmsm_control_default()
-#'@param ebpm_method point_gamma or two_gamma
-#'@param ebpm_control control parameters of ebpm, see ebpm_control_default()
-#'@param splitting_control control parameters of smashgen, see splitting_control_default()
-#'@param smooth_f,smooth_l whether to get smooth estimate of loadings or factors.
-#'@param nugget whether to assume nugget effects
+#'@param smooth_l,smooth_f whether smooth l or f, must match the functions in ebpm.fn
+#'@param warm_start whether warm starts the ebpm. Useful for when smooth_l or f is true.
 #'@param return_all whether return all outputs or simplified ones
 #'@return EL,EF: posterior of loadings and factors
 #'@examples
@@ -42,16 +37,18 @@
 #'@export
 
 ebpmf_identity = function(X,K,
-                          S=NULL,
-                          init = 'scd',
-                          init_loss = 'mkl',
+                          init = 'fasttopics',
                           maxiter=100,
-                          tol=1e-8,
-                          ebpm.fn=ebpm::ebpm_point_gamma,
+                          maxiter_init = 30,
+                          tol=1e-3,
+                          ebpm.fn=c(ebpm::ebpm_point_gamma,smashrgen::pois_smooth_split),
                           fix_F = FALSE,
+                          smooth_l = FALSE,
+                          smooth_f = TRUE,
+                          smooth_control=list(),
                           printevery=10,
                           verbose=TRUE,
-                          convergence_criteria = 'Labs'){
+                          convergence_criteria = 'mKLabs'){
 
 
   #browser()
@@ -59,10 +56,11 @@ ebpmf_identity = function(X,K,
   p = dim(X)[2]
   n_points = n*p
 
-  if(is.null(S)){
-    S = 1
+  if(verbose){
+    cat('initializing...')
+    cat('\n')
   }
-  res = init_stm(X,K,init,init_loss)
+  res = ebpmf_identity_init(X,K,init,maxiter_init)
   EZ = array(dim = c(n,p,K))
   EZ = Calc_EZ(X,K,EZ,res$ql,res$qf)
 
@@ -72,16 +70,22 @@ ebpmf_identity = function(X,K,
   obj = c()
   obj[1] = -Inf
 
+  smooth_control = modifyList(smooth_control_default(),smooth_control,keep.null = TRUE)
+
+  if(verbose){
+    cat('running iterations')
+    cat('\n')
+  }
   for(iter in 1:maxiter){
     #b_k_max = 0
     for(k in 1:K){
-      res = stm_update_rank1(EZ[,,k],k,ebpm.fn,res,fix_F)
+      res = stm_update_rank1(EZ[,,k],k,ebpm.fn,res,fix_F,smooth_l,smooth_f,smooth_control)
     }
     # Update Z
     EZ = Calc_EZ(X,K,EZ,res$ql,res$qf)
 
     if(convergence_criteria == 'mKLabs'){
-      obj[iter+1] = mKL(X,tcrossprod(res$ql$El,res$qf$Ef))
+      obj[iter+1] = mKL(X,tcrossprod(res$ql$Esmooth_l,res$qf$Esmooth_f))
       if(verbose){
         if(iter%%printevery==0){
           print(sprintf('At iter %d, mKL: %f',iter,obj[iter+1]))
@@ -90,7 +94,6 @@ ebpmf_identity = function(X,K,
       if(abs(obj[iter+1]-obj[iter])<=tol){
         break
       }
-
     }
 
     if(convergence_criteria=='ELBO'){
@@ -120,7 +123,7 @@ ebpmf_identity = function(X,K,
 
   }
   if(iter==maxiter){
-    warning('Reached maximum iterations')
+    message('Reached maximum iterations')
   }
 
   #lambda_hat = tcrossprod(res$ql$El,res$qf$Ef)
@@ -148,13 +151,13 @@ calc_stm_obj = function(X,K,res){
 
 calc_H = function(x,s,loglik,pm,pmlog){
   if(is.null(loglik)){
-    H = NULL
+    H = 0
   }else{
     H = loglik - sum(x*log(s)+x*pmlog-pm*s-lfactorial(x))
   }
   H
 }
-stm_update_rank1 = function(Z,k,ebpm.fn,res,fix_F){
+stm_update_rank1 = function(Z,k,ebpm.fn,res,fix_F,smooth_l,smooth_f,smooth_control){
   if(length(ebpm.fn)==1){
     ebpm.fn.l = ebpm.fn
     ebpm.fn.f = ebpm.fn
@@ -181,9 +184,26 @@ stm_update_rank1 = function(Z,k,ebpm.fn,res,fix_F){
     # update f
     f_seq = colSums(Z)
     f_scale = sum(res$ql$El[,k])
-    fit = ebpm.fn.f(f_seq,f_scale)
+    if(smooth_f){
+      #print(res$gf)
+      fit = ebpm.fn.f(f_seq,f_scale,
+                      m_init=smooth_control$m_init,
+                      sigma2_init=res$gf$sigma2[k],
+                      maxiter=smooth_control$maxiter,
+                      wave_trans=smooth_control$wave_trans,
+                      ndwt_method=smooth_control$ndwt_method,
+                      make_power_of_2=smooth_control$make_power_of_2,
+                      ash_pm_init_for0 = smooth_control$ash_pm_init_for0,
+                      vga_tol=smooth_control$vga_tol,
+                      tol = smooth_control$tol,
+                      warmstart=smooth_control$warm_start)
+    }else{
+      fit = ebpm.fn.f(f_seq,f_scale)
+    }
     res$qf$Ef[,k] = fit$posterior$mean
     res$qf$Elogf[,k] = fit$posterior$mean_log
+    #print(fit$fitted_g$sigma2)
+    res$gf$sigma2[k] = fit$fitted_g$sigma2
     if(is.null(fit$posterior$mean_smooth)){
       res$qf$Esmooth_f[,k] = fit$posterior$mean
     }else{
@@ -197,69 +217,7 @@ stm_update_rank1 = function(Z,k,ebpm.fn,res,fix_F){
 
 }
 
-#'@title initialize the stm model
-#'@param X input data matrix
-#'@param K number of topics
-#'@param init init methods, or a list of init L and F
-#'@param init_loss mkl or mse
-#'@importFrom NNLM nnmf
-#'@export
-init_stm = function(X,K,init,init_loss,maxiter_init = 50){
 
-  n = nrow(X)
-  if(is.list(init)){
-    L_init = init$L_init
-    F_init = init$F_init
-
-    if(is.null(L_init)){
-      X_init_fit = nnmf(as.matrix(X),K,method='lee',
-                              loss='mse',show.warning = F,
-                              init = list(H=t(F_init)),
-                              verbose = F,max.iter = maxiter_init)
-      L_init = X_init_fit$W
-    }
-
-  }else{
-
-    if(init%in%c('scd','lee')){
-      X_init_fit = NNLM::nnmf(as.matrix(X),K,method=init,loss=init_loss,show.warning = F,verbose = F,max.iter = maxiter_init)
-      L_init = X_init_fit$W
-      F_init = t(X_init_fit$H)
-    }
-    if(init == 'uniform'){
-      L_init = matrix(runif(n*K),nrow=n,ncol=K)
-      F_init = matrix(runif(K*p),nrow=p,ncol=K)
-      ratio = median(X)/(median(L_init)*median(F_init))
-      L_init = L_init*sqrt(ratio)
-      F_init = F_init*sqrt(ratio)
-    }
-    if(init == 'kmeans'){
-      kmeans.init=kmeans(as.matrix(X),K,nstart=5)
-      L_init = rep(1,n)%o%normalize(as.vector(table(kmeans.init$cluster)))
-      F_init = t(kmeans.init$centers)
-      row.names(F_init)=NULL
-    }
-  }
-
-  # adjust scale of L and F, mainly for stability.
-  ratio = adjLF(L_init,F_init)
-  L_init = ratio$L_init
-  F_init = ratio$F_init
-
-  gl = list()
-  gf = list()
-
-  ql = list(El = L_init, Elogl = log(L_init+1e-10), Esmooth_l=L_init)
-  qf = list(Ef = F_init, Elogf = log(F_init+1e-10), Esmooth_f=F_init)
-
-  return(list(ql=ql,
-              qf=qf,
-              gl=gl,
-              gf=gf,
-              Hl = rep(0,K),
-              Hf = rep(0,K)))
-
-}
 
 
 #' #'@title Default parameters of ebpm
@@ -271,24 +229,20 @@ init_stm = function(X,K,init,init_loss,maxiter_init = 50){
 #'        control =  NULL)
 #' }
 
-#'
-#' #'@title Default parameters of smash gen
-#' #'@param filter.number,family wavelet basis, see wavethresh pakcage for more details.
-#' #'@export
-#' splitting_control_default = function(){
-#'   list(Eb_init = NULL,
-#'        sigma2_init = NULL,
-#'        est_sigma2 = TRUE,
-#'        maxiter = 100,
-#'        tol=1e-5,
-#'        filter.number = 1,
-#'        family = 'DaubExPhase',
-#'        verbose=FALSE,
-#'        printevery = 10,
-#'        ebnm_params=list(mode=0),
-#'        optim_method='L-BFGS-B')
-#' }
-#'
+
+#'@title Default parameters of smooth split
+smooth_control_default = function(){
+  list(wave_trans='ndwt',
+       ndwt_method = "ti.thresh",
+       m_init='vga',
+       maxiter=100,
+       make_power_of_2='reflect',
+       ash_pm_init_for0 = FALSE,
+       vga_tol=1e-3,
+       tol = 1e-3,
+       warm_start=TRUE)
+}
+
 
 
 
