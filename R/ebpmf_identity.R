@@ -51,6 +51,7 @@ ebpmf_identity = function(X,K,
                           convergence_criteria = 'mKLabs'){
 
 
+  start_time = Sys.time()
   #browser()
   n = dim(X)[1]
   p = dim(X)[2]
@@ -130,7 +131,7 @@ ebpmf_identity = function(X,K,
   #lambda_init = L_init%*%F_init
 
   ldf = poisson_to_multinom(res$qf$Esmooth_f,res$ql$Esmooth_l)
-  fit = list(res = res,EL = ldf$L,EF = ldf$FF,d=ldf$s,obj=obj)
+  fit = list(res = res,EL = ldf$L,EF = ldf$FF,d=ldf$s,obj=obj,run_time = difftime(Sys.time(),start_time,units='auto'))
   return(fit)
 
 }
@@ -189,6 +190,7 @@ stm_update_rank1 = function(Z,k,ebpm.fn,res,fix_F,smooth_l,smooth_f,smooth_contr
       fit = ebpm.fn.f(f_seq,f_scale,
                       m_init=smooth_control$m_init,
                       sigma2_init=res$gf$sigma2[k],
+                      #smooth_init = res$qf$Esmooth_f[,k],
                       maxiter=smooth_control$maxiter,
                       wave_trans=smooth_control$wave_trans,
                       ndwt_method=smooth_control$ndwt_method,
@@ -235,11 +237,11 @@ smooth_control_default = function(){
   list(wave_trans='ndwt',
        ndwt_method = "ti.thresh",
        m_init='vga',
-       maxiter=100,
-       make_power_of_2='reflect',
+       maxiter=30,
+       make_power_of_2='extend',
        ash_pm_init_for0 = FALSE,
        vga_tol=1e-3,
-       tol = 1e-3,
+       tol = 1e-2,
        warm_start=TRUE)
 }
 
