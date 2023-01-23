@@ -1,30 +1,24 @@
+---
+title: "A simple example of smoothed topic model"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{A simple example of smoothed topic model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
-# stm
-
-<!-- badges: start -->
-<!-- badges: end -->
-
-An R Package.
-
-## Installation
-
-You can install the development version of `stm` from
-[GitHub](https://github.com/) with:
-
-``` r
-# install.packages("devtools")
-# devtools::install_github("DongyueXie/vebpm")
-# devtools::install_github("DongyueXie/smashrgen")
-# devtools::install_github("DongyueXie/smashr")
-# devtools::install_github("DongyueXie/ebpm")
-devtools::install_github("DongyueXie/stm")
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
 ```
 
-## Example
+```{r setup}
+library(stm)
+```
 
-``` r
+```{r}
 set.seed(123)
 n = 120
 p = 300
