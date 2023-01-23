@@ -26,6 +26,10 @@ You can install the development version of `stm` from [GitHub](https://github.co
 
 ``` r
 # install.packages("devtools")
+devtools::install_github("DongyueXie/vebpm")
+devtools::install_github("DongyueXie/smashrgen")
+devtools::install_github("DongyueXie/smashr")
+devtools::install_github("DongyueXie/ebpm")
 devtools::install_github("DongyueXie/stm")
 ```
 
