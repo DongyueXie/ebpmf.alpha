@@ -154,18 +154,27 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                                    flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
                                    flash.nullcheck(verbose = verbose_flash))
     sigma2 = fit_flash$residuals.sd^2
+    if(fit_flash$n.factors==0){
+      stop('No structure found in initialization. Try another M.')
+    }
   }else{
     fit_flash = suppressWarnings(flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
                                    flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
                                    flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
                                    flash.nullcheck(verbose = verbose_flash))
+    if(fit_flash$n.factors==0){
+      fit_flash = suppressWarnings(flash.init(M, S = NULL, var.type = var.type)%>%
+                                     flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
+                                     flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
+                                     flash.nullcheck(verbose = verbose_flash))
+      sigma2 = fit_flash$residuals.sd^2
+      stop('No structure found in initialization. How to deal with this issue?')
+    }
   }
   rm(M)
   gc()
   run_time_flash_init =  difftime(Sys.time(),t0,units = 'secs')
-  if(fit_flash$n.factors==0){
-    stop('No structure found in initialization. How to deal with this issue? One way is to reduce sigma2? Or let flash estimate sigma2 instead of fixing it?')
-  }
+
 
   K_trace = fit_flash$n.factors
   sigma2_trace = sigma2
