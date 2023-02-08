@@ -16,6 +16,7 @@
 #'@param a0,b0 Inverse-Gamma(a0,b0) prior on sigma2 for regularization.
 #'@param cap_var_mean_ratio only update sigma2 when if var/mean > (1+cap_var_mean_ratio). i.e. when overdispersion is low enough, stop updating sigma2 to boost convergence.
 #'@param garbage_collection_every perform gc() to reduce memory usage.
+#'@param est_l0,est_f0 whether update l0,f0 or fix them.
 #'@return fitted object
 #'@import flashier
 #'@import magrittr
@@ -30,7 +31,6 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                       sigma2=NULL,
                       est_sigma2 = TRUE,
                      M_init = NULL,
-
                      ebnm.fn = ebnm::ebnm_point_normal,
                      loadings_sign = 0,
                      factors_sign = 0,
@@ -57,6 +57,8 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                     save_init_val = FALSE,
                     return_sigma2_trace = FALSE,
                     garbage_collection_every = 10,
+                    est_l0 = FALSE,
+                    est_f0 = TRUE,
                     save_fit_every = Inf,
                     save_fit_path = NULL,
                     save_fit_name = NULL){
@@ -78,6 +80,12 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
   }
   if(length(f0)==1){
     f0 = rep(f0,p)
+  }
+  if(est_l0){
+    rowsums_Y = rowSums(Y)
+  }
+  if(est_f0){
+    colsums_Y = colSums(Y)
   }
 
   init_val = ebpmf_log_init(Y,l0,f0,sigma2,
@@ -121,15 +129,9 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
   ## split data
   n_batch = ceiling(n/batch_size)
   if(n_batch>1){
-    # if(n_batch==1){
-    #   batches = list(idx = 1:n)
-    # }else{
-    #   batches = split(1:n, cut(seq_along(1:n),n_batch , labels = FALSE))
-    # }
     batches = split(1:n, cut(seq_along(1:n),n_batch , labels = FALSE))
     # transform Y to a list of sub-Y's
     Y = lapply(batches,function(b){Y[b,]})
-    l0 = lapply(batches,function(b){l0[b]})
   }else{
     # To speed up calculation when Y is small and dense Y can be fitted into memory
     Y = as.matrix(Y)
@@ -163,6 +165,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                                    flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
                                    flash.nullcheck(verbose = verbose_flash))
     if(fit_flash$n.factors==0){
+      # if there is no structure found with fixed sigma2
       fit_flash = suppressWarnings(flash.init(M, S = NULL, var.type = var.type)%>%
                                      flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
                                      flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
@@ -210,15 +213,22 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
         # sigma2_b = ifelse(var_type=='by_row',sigma2[b],adjust_var_shape(sigma2,var_type,length(b),p))
         res = vga_pois_solver_mat_newton(fit_flash$flash.fit$Y[b,],
                                          y_b,
-                                         tcrossprod(l0[[i_b]],f0),
+                                         tcrossprod(l0[b],f0),
                                          tcrossprod(fit_flash$flash.fit$EF[[1]][b,],fit_flash$flash.fit$EF[[2]]),
                                          my_ifelse(var_type=='by_row',sigma2[b],adjust_var_shape(sigma2,var_type,length(b),p)),
                                          maxiter=maxiter_vga,tol=vga_tol,return_V=TRUE)
 
         fit_flash$flash.fit$Y[b,] = res$M
+
+        ### These are for ELBO calculation later ###
+        ############################################################
         sym = sym + sum(y_b*res$M)
-        ssexp = ssexp + sum(tcrossprod(l0[[i_b]],f0)*exp(res$M+res$V/2))
+        ssexp = ssexp + sum(tcrossprod(l0[b],f0)*exp(res$M+res$V/2))
         slogv = slogv + sum(log(res$V)/2+0.9189385)
+        ############################################################
+
+        ### This is for updating sigma2, and elbo calculation ###
+        ############################################################
         if(var_type=='by_row'){
           v_sum = c(v_sum,rowSums(res$V))
         }else if(var_type=='by_col'){
@@ -226,10 +236,9 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
         }else if(var_type=='constant'){
           v_sum=v_sum+sum(res$V)
         }
+        ############################################################
       }
       rm(y_b)
-      #rm(beta_b)
-      #rm(sigma2_b)
       rm(res)
       if(var_type=='by_row'){
         v_sum = v_sum[-1]
@@ -239,15 +248,29 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
         sigma2 = ebpmf_update_sigma2(fit_flash,sigma2,v_sum,var_type,cap_var_mean_ratio,a0,b0,n,p)
       }
 
+
     }else{
       res = vga_pois_solver_mat_newton(fit_flash$flash.fit$Y,Y,tcrossprod(l0,f0),fitted(fit_flash),
                                        adjust_var_shape(sigma2,var_type,n,p),
                                        maxiter = maxiter_vga,
                                        tol=vga_tol,return_V = TRUE)
       fit_flash$flash.fit$Y = res$M
+
+      if(est_f0){
+        f0 = colsums_Y/(colSums(l0*exp(res$M+res$V/2)))
+      }
+      if(est_l0){
+        l0 = rowsums_Y/(rowSums(exp(res$M+res$V/2)%*%diag(f0)))
+      }
+
+
+      ### These are for ELBO calculation later ###
+      ############################################################
       sym = sum(Y*res$M)
       ssexp = sum(tcrossprod(l0,f0)*exp(res$M+res$V/2))
       slogv = sum(log(res$V)/2+0.9189385)
+
+      ### This is for estimating sigma2
       if(var_type=='constant'){
         v_sum =sum(res$V)
       }else if(var_type=='by_col'){
@@ -255,8 +278,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
       }else if(var_type=='by_row'){
         v_sum =rowSums(res$V)
       }
-
-
+      ############################################################
       if(est_sigma2){
         sigma2=ebpmf_update_sigma2(fit_flash,sigma2,v_sum,var_type,cap_var_mean_ratio,a0,b0,n,p)
       }
@@ -309,6 +331,8 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
     K_trace[iter+1] = fit_flash$n.factors
     KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
 
+
+
     # check convergence
     obj[iter + 1] = calc_ebpmf_log_obj(n,p,sym,ssexp,slogv,v_sum,sigma2,fit_flash$flash.fit$R2,KL_LF,const,var_offset_for_obj,a0,b0)
     if((obj[iter + 1]-obj[iter])/num_points< conv_tol){
@@ -355,6 +379,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
               sigma2 = sigma2,
               sigma2_trace = sigma2_trace,
               init_val=init_val,
+              l0=l0,f0=f0,
               run_time = difftime(end_time,start_time,units='auto'),
               run_time_break_down = list(run_time_vga_init = run_time_vga_init,
                                          run_time_flash_init = run_time_flash_init,

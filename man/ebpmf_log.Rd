@@ -38,6 +38,8 @@ ebpmf_log(
   save_init_val = FALSE,
   return_sigma2_trace = FALSE,
   garbage_collection_every = 10,
+  est_l0 = FALSE,
+  est_f0 = TRUE,
   save_fit_every = Inf,
   save_fit_path = NULL,
   save_fit_name = NULL
@@ -77,6 +79,8 @@ ebpmf_log(
 \item{cap_var_mean_ratio}{only update sigma2 when if var/mean > (1+cap_var_mean_ratio). i.e. when overdispersion is low enough, stop updating sigma2 to boost convergence.}
 
 \item{garbage_collection_every}{perform gc() to reduce memory usage.}
+
+\item{est_l0, est_f0}{whether update l0,f0 or fix them.}
 }
 \value{
 fitted object
