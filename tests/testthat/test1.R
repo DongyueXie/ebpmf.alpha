@@ -28,7 +28,7 @@ for(k in 1:fit$fit_flash$n.factors){
 Lambda = exp(tcrossprod(abs(Ltrue),Ftrue)+ matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
-fit = ebpmf_log(Y,verbose=TRUE,
+fit = ebpmf_log(Y,verbose=TRUE,l0=1,f0=1,
                              ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_normal),
                              loadings_sign = 1,maxiter = 100,printevery = 1,return_sigma2_trace = T)
 plot(fit$K_trace)
@@ -41,7 +41,7 @@ plot(fit$fit_flash$F.pm[,3],type='l')
 # test nonegative loading and factor option
 Lambda = exp(tcrossprod(abs(Ltrue),abs(Ftrue))+ matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
-fit = ebpmf_log(Y,verbose=TRUE,
+fit = ebpmf_log(Y,verbose=TRUE,l0=1,f0=1,
                 ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_exponential),
                 loadings_sign = 1,factors_sign = 1,maxiter = 100,printevery = 1,return_sigma2_trace = T)
 for(k in 1:fit$fit_flash$n.factors){

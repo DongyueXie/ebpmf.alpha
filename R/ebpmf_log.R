@@ -1,12 +1,12 @@
-#'@title Fit empirical Bayes matrix factorization
-#'@param Y count data matrix, in sparse format
-#'@param l0,f0 The known scaling loadings and factors.
+#'@title Fit empirical Bayes POisson matrix factorization with log link
+#'@param Y count data matrix, can be sparse format
+#'@param l0,f0 The scaling loadings and factors.
 #'@param sigma2 the variance term
 #'@param est_sigma2 whether estimate the variance term or fix it at sigma2
 #'@param ebnm.fn see `?flash`.
 #'@param loadings_sign,factors_sign see `?init.fn.default`, must match ebnm.fn
-#'@param Kmax_init the Kmax in the first flash fit
-#'@param add_greedy_Kmax THe Kmax in add_greedy in iterations
+#'@param Kmax_init the Kmax in the first flash fit, and for the subsequent flash fit.
+#'@param add_greedy_Kmax The Kmax in add_greedy in iterations
 #'@param add_greedy_warmstart,add_greedy_extrapolate see `?flash.add.greedy`
 #'@param add_greedy_init either 'previous_init' or "new_init"
 #'@param add_greedy_every perform flash add greedy every `add_greedy_every` iterations.
@@ -30,20 +30,20 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                       var_type='by_col',
                       sigma2=NULL,
                       est_sigma2 = TRUE,
-                     M_init = NULL,
-                     ebnm.fn = ebnm::ebnm_point_normal,
-                     loadings_sign = 0,
-                     factors_sign = 0,
-                     Kmax_init=30,
-                    add_greedy_Kmax = 1,
+                      M_init = NULL,
+                      ebnm.fn = ebnm::ebnm_point_normal,
+                      loadings_sign = 0,
+                      factors_sign = 0,
+                      Kmax_init=30,
+                      add_greedy_Kmax = 1,
                     add_greedy_warmstart = TRUE,
                     add_greedy_extrapolate = FALSE,
                     add_greedy_init = 'new_init',
                     add_greedy_every = 1,
-                    batch_size = 1e3,
+                    batch_size = nrow(Y),
                     maxiter=100,
                     maxiter_backfitting = 1,
-                    maxiter_vga = 3,
+                    maxiter_vga = 10,
                     conv_tol=1e-5,
                     init_tol = 1e-5,
                     vga_tol = 1e-3,
@@ -70,10 +70,10 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
   num_points = n*p
 
   if(is.null(l0)){
-    l0 = 1
+    l0 = c(rowSums(Y)/sqrt(sum(Y)))
   }
   if(is.null(f0)){
-    f0 = 1
+    f0 = c(colSums(Y)/sqrt(sum(Y)))
   }
   if(length(l0)==1){
     l0 = rep(l0,n)
@@ -105,9 +105,11 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
   gc()
 
   if(is(Y,'sparseMatrix')){
-    const = sum(Diagonal(n,log(l0))%*%Y) + sum(Y%*%Diagonal(p,log(f0)))- sum_lfactorial_sparseMat(Y)
+    sly = sum_lfactorial_sparseMat(Y)
+    const = sum(Diagonal(n,log(l0))%*%Y) + sum(Y%*%Diagonal(p,log(f0)))- sly
   }else{
-    const = sum(Y*log(tcrossprod(l0,f0))) - sum(lfactorial(Y))
+    sly = sum(lfactorial(Y))
+    const = sum(Y*log(tcrossprod(l0,f0))) - sly
   }
 
   if(var_type=='by_row'){
@@ -152,7 +154,8 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
   t0 = Sys.time()
   if(is.null(sigma2)){
     fit_flash = suppressWarnings(flash.init(M, S = NULL, var.type = var.type)%>%
-                                   flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
+                                   flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,
+                                                    ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
                                    flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
                                    flash.nullcheck(verbose = verbose_flash))
     sigma2 = fit_flash$residuals.sd^2
@@ -161,13 +164,15 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
     }
   }else{
     fit_flash = suppressWarnings(flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
-                                   flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
+                                   flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,
+                                                    ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
                                    flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
                                    flash.nullcheck(verbose = verbose_flash))
     if(fit_flash$n.factors==0){
       # if there is no structure found with fixed sigma2
       fit_flash = suppressWarnings(flash.init(M, S = NULL, var.type = var.type)%>%
-                                     flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
+                                     flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,
+                                                      ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
                                      flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
                                      flash.nullcheck(verbose = verbose_flash))
       sigma2 = fit_flash$residuals.sd^2
@@ -256,12 +261,16 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                                        tol=vga_tol,return_V = TRUE)
       fit_flash$flash.fit$Y = res$M
 
-      if(est_f0){
-        f0 = colsums_Y/(colSums(l0*exp(res$M+res$V/2)))
+      if(est_f0 | est_l0){
+        if(est_f0){
+          f0 = colsums_Y/(colSums(l0*exp(res$M+res$V/2)))
+        }
+        if(est_l0){
+          l0 = rowsums_Y/(rowSums(exp(res$M+res$V/2)%*%diag(f0)))
+        }
+        const = sum(Y*log(tcrossprod(l0,f0))) - sly
       }
-      if(est_l0){
-        l0 = rowsums_Y/(rowSums(exp(res$M+res$V/2)%*%diag(f0)))
-      }
+
 
 
       ### These are for ELBO calculation later ###
@@ -335,7 +344,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
 
     # check convergence
     obj[iter + 1] = calc_ebpmf_log_obj(n,p,sym,ssexp,slogv,v_sum,sigma2,fit_flash$flash.fit$R2,KL_LF,const,var_offset_for_obj,a0,b0)
-    if((obj[iter + 1]-obj[iter])/num_points< conv_tol){
+    if(abs(obj[iter + 1]-obj[iter])/num_points< conv_tol){
       break
     }
     if(verbose){
@@ -353,6 +362,8 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                    elbo_trace=obj,
                    sigma2 = sigma2,
                    sigma2_trace = sigma2_trace,
+                   l0=l0,
+                   f0=f0,
                    run_time = difftime(Sys.time(),start_time,units='auto'),
                    run_time_break_down = list(run_time_vga_init = run_time_vga_init,
                                               run_time_flash_init = run_time_flash_init,

@@ -2,7 +2,7 @@
 % Please edit documentation in R/ebpmf_log.R
 \name{ebpmf_log}
 \alias{ebpmf_log}
-\title{Fit empirical Bayes matrix factorization}
+\title{Fit empirical Bayes POisson matrix factorization with log link}
 \usage{
 ebpmf_log(
   Y,
@@ -21,10 +21,10 @@ ebpmf_log(
   add_greedy_extrapolate = FALSE,
   add_greedy_init = "new_init",
   add_greedy_every = 1,
-  batch_size = 1000,
+  batch_size = nrow(Y),
   maxiter = 100,
   maxiter_backfitting = 1,
-  maxiter_vga = 3,
+  maxiter_vga = 10,
   conv_tol = 1e-05,
   init_tol = 1e-05,
   vga_tol = 0.001,
@@ -46,9 +46,9 @@ ebpmf_log(
 )
 }
 \arguments{
-\item{Y}{count data matrix, in sparse format}
+\item{Y}{count data matrix, can be sparse format}
 
-\item{l0, f0}{The known scaling loadings and factors.}
+\item{l0, f0}{The scaling loadings and factors.}
 
 \item{sigma2}{the variance term}
 
@@ -58,9 +58,9 @@ ebpmf_log(
 
 \item{loadings_sign, factors_sign}{see `?init.fn.default`, must match ebnm.fn}
 
-\item{Kmax_init}{the Kmax in the first flash fit}
+\item{Kmax_init}{the Kmax in the first flash fit, and for the subsequent flash fit.}
 
-\item{add_greedy_Kmax}{THe Kmax in add_greedy in iterations}
+\item{add_greedy_Kmax}{The Kmax in add_greedy in iterations}
 
 \item{add_greedy_warmstart, add_greedy_extrapolate}{see `?flash.add.greedy`}
 
@@ -86,5 +86,5 @@ ebpmf_log(
 fitted object
 }
 \description{
-Fit empirical Bayes matrix factorization
+Fit empirical Bayes POisson matrix factorization with log link
 }
