@@ -13,7 +13,7 @@ Ltrue = matrix(rnorm(N*K), ncol=K)
 Lambda = exp(tcrossprod(Ltrue,Ftrue) + matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
-peakRAM(fit <- ebpmf_log(Y,verbose=TRUE))
+peakRAM(fit <- ebpmf_log(Y,l0=0,f0=0,flash_control=list(fix_f0=T)))
 
 # peakRAM(fit <- splitting_PMF_flashier_low_memory(Y,verbose=TRUE,n_cores = 10,maxiter_vga = 2,printevery = 1,batch_size = 100))
 
@@ -25,25 +25,27 @@ for(k in 1:fit$fit_flash$n.factors){
   plot(fit$fit_flash$F.pm[,k],type='l')
 }
 # test nonegative loading option
+set.seed(12345)
 Lambda = exp(tcrossprod(abs(Ltrue),Ftrue)+ matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
-fit = ebpmf_log(Y,verbose=TRUE,l0=1,f0=1,
-                             ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_normal),
-                             loadings_sign = 1,maxiter = 100,printevery = 1,return_sigma2_trace = T)
+fit = ebpmf_log(Y,l0=0,f0=0,flash_control=list(ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_normal),
+                             loadings_sign = 1,fix_f0=T))
 plot(fit$K_trace)
+fit$fit_flash$pve
 plot(fitted(fit$fit_flash),tcrossprod(abs(Ltrue),Ftrue),col='grey80')
 abline(a=0,b=1)
-plot(fit$fit_flash$F.pm[,1],type='l')
-plot(fit$fit_flash$F.pm[,2],type='l')
-plot(fit$fit_flash$F.pm[,3],type='l')
+for(k in 1:fit$fit_flash$n.factors){
+  plot(fit$fit_flash$F.pm[,k],type='l')
+}
+
 
 # test nonegative loading and factor option
+set.seed(12345)
 Lambda = exp(tcrossprod(abs(Ltrue),abs(Ftrue))+ matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
-fit = ebpmf_log(Y,verbose=TRUE,l0=1,f0=1,
-                ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_exponential),
-                loadings_sign = 1,factors_sign = 1,maxiter = 100,printevery = 1,return_sigma2_trace = T)
+fit = ebpmf_log(Y,l0=0,f0=0,flash_control=list(ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_exponential),
+                                               loadings_sign = 1,factors_sign=1,fix_f0=T))
 for(k in 1:fit$fit_flash$n.factors){
   plot(fit$fit_flash$F.pm[,k],type='l')
 }

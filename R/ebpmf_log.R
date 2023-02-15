@@ -1,67 +1,108 @@
-#'@title Fit empirical Bayes POisson matrix factorization with log link
+#'@title Fit empirical Bayes Poisson matrix factorization with log link function
 #'@param Y count data matrix, can be sparse format
-#'@param l0,f0 The scaling loadings and factors.
-#'@param sigma2 the variance term
-#'@param est_sigma2 whether estimate the variance term or fix it at sigma2
-#'@param ebnm.fn see `?flash`.
-#'@param loadings_sign,factors_sign see `?init.fn.default`, must match ebnm.fn
-#'@param Kmax_init the Kmax in the first flash fit, and for the subsequent flash fit.
-#'@param add_greedy_Kmax The Kmax in add_greedy in iterations
-#'@param add_greedy_warmstart,add_greedy_extrapolate see `?flash.add.greedy`
-#'@param add_greedy_init either 'previous_init' or "new_init"
-#'@param add_greedy_every perform flash add greedy every `add_greedy_every` iterations.
-#'@param maxiter,maxiter_backfitting,maxiter_vga max iterations for the splitting, backfitting, vga.
-#'@param conv_tol,init_tol,vga_tol tolerance for convergence, initialization vga fit, and vga fit in iterations
-#'@param batch_size reduce memory usage for vga step by looping subsets of dataset.
-#'@param a0,b0 Inverse-Gamma(a0,b0) prior on sigma2 for regularization.
-#'@param cap_var_mean_ratio only update sigma2 when if var/mean > (1+cap_var_mean_ratio). i.e. when overdispersion is low enough, stop updating sigma2 to boost convergence.
-#'@param garbage_collection_every perform gc() to reduce memory usage.
-#'@param est_l0,est_f0 whether update l0,f0 or fix them.
-#'@return fitted object
+#'@param l0,f0 The background loadings and factors, see the model in ‘Details’.
+#'@param var_type variance type, "by_row", "by_col" or "constant", see the model in ‘Details’
+#'@param sigma2_init the unstructured variance init value
+#'@param M_init the initial value for latent M
+#'@param general_control A list of parameters controlling the behavior of the algorithm. See ‘Details’.
+#'@param vga_control A list of parameters controlling the behavior of the VGA step. See ‘Details’.
+#'@param sigma2_control A list of parameters controlling the behavior of updating variance. See ‘Details’.
+#'@param flash_control A list of parameters controlling the behavior of the flash step. See ‘Details’.
+#'@param verbose TRUE to print the model fitting progress
+#'@return A list of:
+#'  \item{fit_flash:}{fitted flash object}
+#'  \item{elbo:}{evidence lower bound value}
+#'  \item{K_trace:}{trace of number of factors}
+#'  \item{elbo_trace:}{trace of elbo}
+#'  \item{sigma2:}{the variance estimates}
+#'  \item{run_time:}{run time of the algorithm}
+#'
+#'@details The model is
+#'\deqn{y_{ij}\sim Poisson(\exp(\mu_{ij})),}
+#'\deqn{\mu_{ij} = l_{i0} + f_{j0} + \sum_k l_{ik}f_{jk} + \epsilon_{ij},}
+#'\deqn{l_{i0}\sim g_{l_0}(\cdot), f_{j0}\sim g_{f_0}(\cdot),}
+#'\deqn{l_{ik}\sim g_{l_k}(\cdot),f_{jk}\sim g_{f_k}(\cdot),}
+#'\deqn{\epsilon_{ij}\sim N(0,\sigma^2_{ij}).}
+#'
+#'The \code{general_control} argument is a list in which any of the following
+#'named components will override the default algorithm settings (as
+#'defined by \code{ebpmf_log_general_control_default}):
+#'\describe{
+#'\item{\code{batch_size}}{reduce memory usage for vga step by looping subsets of dataset.}
+#'\item{\code{maxiter}}{max iteration allowed.}
+#'\item{\code{conv_tol}}{tolerance for convergence}
+#'\item{\code{init_tol}}{tolerance for initialization}
+#'\item{\code{printevery}}{print progress over iterations}
+#'\item{\code{garbage_collection_every}}{perform `gc()` to reduce memory usage}
+#'\item{\code{save_init_val}}{whether return initailization values}
+#'\item{\code{save_latent_M}}{whether return latent M, can be very large}
+#'\item{\code{save_fit_every}}{save intermediate results?}
+#'\item{\code{save_fit_path}}{save intermediate results path}
+#'\item{\code{save_fit_name}}{save intermediate name}
+#'}
+#'
+#'The \code{flash_control} argument is a list in which any of the following
+#'named components will override the default algorithm settings (as
+#'defined by \code{ebpmf_log_flash_control_default}):
+#'
+#'\describe{
+#'
+#'\item{\code{ebnm.fn}}{see `?flash`.}
+#'\item{\code{ebnm.fn.offset}}{The prior for \eqn{l_0}, \eqn{f_0} if not fixing them.}
+#'\item{\code{loadings_sign}}{see `?init.fn.default`, must match ebnm.fn}
+#'\item{\code{factors_sign}}{see `?init.fn.default`, must match ebnm.fn}
+#'\item{\code{fix_l0}}{fix  \eqn{l_0}?}
+#'\item{\code{fix_f0}}{fix  \eqn{f_0}?}
+#'\item{\code{Kmax}}{see `?flash`.}
+#'\item{\code{add_greedy_Kmax}}{The Kmax in add_greedy in iterations}
+#'\item{\code{add_greedy_warmstart}}{see `?flash.add.greedy`}
+#'\item{\code{add_greedy_extrapolate}}{see `?flash.add.greedy`}
+#'\item{\code{add_greedy_every}}{perform flash add greedy every `add_greedy_every` iterations.}
+#'\item{\code{maxiter_backfitting}}{max iterations for the flash backfitting}
+#'\item{\code{verbose_flash}}{whether print flash updates}
+#'}
+#'
+#'The \code{vga_control} argument is a list in which any of the following
+#'named components will override the default algorithm settings (as
+#'defined by \code{ebpmf_log_vga_control_default}):
+#'
+#'\describe{
+#'\item{\code{maxiter_vga}}{max iterations for vga step Newton's method}
+#'\item{\code{vga_tol}}{tolerance for stopping the optimization.}
+#'\item{\code{n_cores}}{Can utilize more than 1 core to perform vga, using `mclapply` function.}
+#'}
+#'
+#'The \code{sigma2_control} argument is a list in which any of the following
+#'named components will override the default algorithm settings (as
+#'defined by \code{ebpmf_log_sigma2_control_default}):
+#'
+#'\describe{
+#'\item{\code{est_sigma2}}{whether estimate the variance term or fix it at sigma2_init}
+#'\item{\code{a0,b0}}{Inverse-Gamma(a0,b0) prior on sigma2 for regularization.}
+#'\item{\code{cap_var_mean_ratio}}{only update sigma2 when if var/mean > (1+cap_var_mean_ratio). i.e. when overdispersion is low enough, stop updating sigma2 to boost convergence.}
+#'\item{\code{return_sigma2_trace}}{internal usage only}
+#'}
+#'
+#'
+#'
+#'
 #'@import flashier
 #'@import magrittr
 #'@importFrom parallel mclapply
-#'@importFrom vebpm pois_mean_GG
 #'@importFrom Matrix Diagonal
 #'@importFrom matrixStats colMaxs
 #'@importFrom matrixStats rowMaxs
 #'@export
 ebpmf_log = function(Y,l0=NULL,f0=NULL,
-                      var_type='by_col',
-                      sigma2=NULL,
-                      est_sigma2 = TRUE,
-                      M_init = NULL,
-                      ebnm.fn = ebnm::ebnm_point_normal,
-                      loadings_sign = 0,
-                      factors_sign = 0,
-                      Kmax_init=30,
-                      add_greedy_Kmax = 1,
-                    add_greedy_warmstart = TRUE,
-                    add_greedy_extrapolate = FALSE,
-                    add_greedy_init = 'new_init',
-                    add_greedy_every = 1,
-                    batch_size = nrow(Y),
-                    maxiter=100,
-                    maxiter_backfitting = 1,
-                    maxiter_vga = 10,
-                    conv_tol=1e-5,
-                    init_tol = 1e-5,
-                    vga_tol = 1e-3,
-                    verbose_flash=0,
-                    printevery=10,
-                    verbose=FALSE,
-                    n_cores = 1,
-                    a0 = 1,
-                    b0 = 1,
-                    cap_var_mean_ratio = 0.1,
-                    save_init_val = FALSE,
-                    return_sigma2_trace = FALSE,
-                    garbage_collection_every = 10,
-                    est_l0 = FALSE,
-                    est_f0 = TRUE,
-                    save_fit_every = Inf,
-                    save_fit_path = NULL,
-                    save_fit_name = NULL){
+                     var_type='by_col',
+                     sigma2_init=NULL,
+                     M_init = NULL,
+                     general_control = list(),
+                     vga_control = list(),
+                     flash_control = list(),
+                     sigma2_control = list(),
+                     verbose=TRUE
+                     ){
 
   start_time = Sys.time()
 
@@ -70,46 +111,44 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
   num_points = n*p
 
   if(is.null(l0)){
-    l0 = c(rowSums(Y)/sqrt(sum(Y)))
+    l0 = cbind(rowMeans(Y))
   }
   if(is.null(f0)){
-    f0 = c(colSums(Y)/sqrt(sum(Y)))
+    f0 = cbind(colSums(Y)/sum(l0))
   }
   if(length(l0)==1){
-    l0 = rep(l0,n)
+    l0 = cbind(rep(l0,n))
   }
   if(length(f0)==1){
-    f0 = rep(f0,p)
-  }
-  if(est_l0){
-    rowsums_Y = rowSums(Y)
-  }
-  if(est_f0){
-    colsums_Y = colSums(Y)
+    f0 = cbind(rep(f0,p))
   }
 
-  init_val = ebpmf_log_init(Y,l0,f0,sigma2,
-                                var_type,
-                                M_init,
-                                verbose,
-                                n_cores,
-                                init_tol,
-                                printevery)
+  general_control = modifyList(ebpmf_log_general_control_default(),general_control,keep.null = TRUE)
+  vga_control = modifyList(ebpmf_log_vga_control_default(),vga_control,keep.null = TRUE)
+  flash_control = modifyList(ebpmf_log_flash_control_default(),flash_control,keep.null = TRUE)
+  flash_control = c(flash_control,flash_extra_control(flash_control$loadings_sign,flash_control$factors_sign,flash_control$fix_l0,flash_control$fix_f0))
+  sigma2_control = modifyList(ebpmf_log_sigma2_control_default(),sigma2_control,keep.null = TRUE)
+
+  init_val = ebpmf_log_init(Y,l0,f0,sigma2_init,
+                            var_type,
+                            M_init,
+                            verbose,
+                            vga_control$n_cores,
+                            general_control$init_tol,
+                            general_control$printevery)
   run_time_vga_init = difftime(Sys.time(),start_time,units = 'secs')
 
   sigma2 = init_val$sigma2_init
   M = init_val$M_init
-  if(!save_init_val){
+  if(!general_control$save_init_val){
     init_val = NULL
   }
   gc()
 
   if(is(Y,'sparseMatrix')){
-    sly = sum_lfactorial_sparseMat(Y)
-    const = sum(Diagonal(n,log(l0))%*%Y) + sum(Y%*%Diagonal(p,log(f0)))- sly
+    const = - sum_lfactorial_sparseMat(Y)
   }else{
-    sly = sum(lfactorial(Y))
-    const = sum(Y*log(tcrossprod(l0,f0))) - sly
+    const = - sum(lfactorial(Y))
   }
 
   if(var_type=='by_row'){
@@ -129,7 +168,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
   }
 
   ## split data
-  n_batch = ceiling(n/batch_size)
+  n_batch = ceiling(n/general_control$batch_size)
   if(n_batch>1){
     batches = split(1:n, cut(seq_along(1:n),n_batch , labels = FALSE))
     # transform Y to a list of sub-Y's
@@ -144,65 +183,33 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
     cat('running initial flash fit')
     cat('\n')
   }
-  if(loadings_sign==0&factors_sign==0){
-    # this is faster than the default init method in flash
-    init.fn.flash = function(f){init.fn.irlba(f)}
-  }else{
-    init.fn.flash = function(f){init.fn.default(f, dim.signs = c(loadings_sign, factors_sign))}
-  }
+
 
   t0 = Sys.time()
-  if(is.null(sigma2)){
-    fit_flash = suppressWarnings(flash.init(M, S = NULL, var.type = var.type)%>%
-                                   flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,
-                                                    ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
-                                   flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
-                                   flash.nullcheck(verbose = verbose_flash))
-    sigma2 = fit_flash$residuals.sd^2
-    if(fit_flash$n.factors==0){
-      stop('No structure found in initialization. Try another M.')
-    }
-  }else{
-    fit_flash = suppressWarnings(flash.init(M, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim)%>%
-                                   flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,
-                                                    ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
-                                   flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
-                                   flash.nullcheck(verbose = verbose_flash))
-    if(fit_flash$n.factors==0){
-      # if there is no structure found with fixed sigma2
-      fit_flash = suppressWarnings(flash.init(M, S = NULL, var.type = var.type)%>%
-                                     flash.add.greedy(Kmax = Kmax_init,verbose = verbose_flash,
-                                                      ebnm.fn=ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
-                                     flash.backfit(verbose = verbose_flash,maxiter = maxiter_backfitting) %>%
-                                     flash.nullcheck(verbose = verbose_flash))
-      sigma2 = fit_flash$residuals.sd^2
-      stop('No structure found in initialization. How to deal with this issue?')
-    }
-  }
+  ones_n = cbind(rep(1,n))
+  ones_p = cbind(rep(1,p))
+  fit_flash = ebpmf_log_flash_init(M,sigma2,l0,f0,ones_n,ones_p,flash_control$loadings_sign,flash_control$factors_sign,
+                                   flash_control$ebnm.fn,flash_control$ebnm.fn.offset,
+                                   S.dim,flash_control$verbose_flash,flash_control$fix_l0,flash_control$fix_f0,flash_control$Kmax,
+                                   flash_control$add_greedy_extrapolate,flash_control$maxiter_backfitting,
+                                   flash_control$init.fn.flash,flash_control$no_backfit_kset)
   rm(M)
   gc()
   run_time_flash_init =  difftime(Sys.time(),t0,units = 'secs')
 
-
   K_trace = fit_flash$n.factors
   sigma2_trace = sigma2
-  K_changed = TRUE
   obj = -Inf
 
   run_time_vga = c()
-  run_time_flash_init_factor = c()
-  run_time_flash_greedy = c()
-  run_time_flash_backfitting = c()
-  run_time_flash_nullcheck = c()
+  run_time_flash = c()
 
   if(verbose){
     cat('Running iterations...')
     cat('\n')
   }
 
-  for(iter in 1:maxiter){
-
-    #sigma2_old = sigma2
+  for(iter in 1:general_control$maxiter){
 
     t0 = Sys.time()
     if(n_batch >1){
@@ -214,21 +221,19 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
         b = batches[[i_b]]
         ## this is for speeding up
         y_b = as.matrix(Y[[i_b]])
-        # beta_b = tcrossprod(fit_flash$flash.fit$EF[[1]][b,],fit_flash$flash.fit$EF[[2]])
-        # sigma2_b = ifelse(var_type=='by_row',sigma2[b],adjust_var_shape(sigma2,var_type,length(b),p))
         res = vga_pois_solver_mat_newton(fit_flash$flash.fit$Y[b,],
                                          y_b,
-                                         tcrossprod(l0[b],f0),
+                                         1,
                                          tcrossprod(fit_flash$flash.fit$EF[[1]][b,],fit_flash$flash.fit$EF[[2]]),
                                          my_ifelse(var_type=='by_row',sigma2[b],adjust_var_shape(sigma2,var_type,length(b),p)),
-                                         maxiter=maxiter_vga,tol=vga_tol,return_V=TRUE)
+                                         maxiter=vga_control$maxiter_vga,tol=vga_control$vga_tol,return_V=TRUE)
 
         fit_flash$flash.fit$Y[b,] = res$M
 
         ### These are for ELBO calculation later ###
         ############################################################
         sym = sym + sum(y_b*res$M)
-        ssexp = ssexp + sum(tcrossprod(l0[b],f0)*exp(res$M+res$V/2))
+        ssexp = ssexp + sum(exp(res$M+res$V/2))
         slogv = slogv + sum(log(res$V)/2+0.9189385)
         ############################################################
 
@@ -248,35 +253,26 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
       if(var_type=='by_row'){
         v_sum = v_sum[-1]
       }
-
-      if(est_sigma2){
-        sigma2 = ebpmf_update_sigma2(fit_flash,sigma2,v_sum,var_type,cap_var_mean_ratio,a0,b0,n,p)
+      if(sigma2_control$est_sigma2){
+        sigma2 = ebpmf_log_update_sigma2(fit_flash,sigma2,v_sum,var_type,
+                                         sigma2_control$cap_var_mean_ratio,sigma2_control$a0,sigma2_control$b0,n,p)
       }
 
 
     }else{
-      res = vga_pois_solver_mat_newton(fit_flash$flash.fit$Y,Y,tcrossprod(l0,f0),fitted(fit_flash),
+      res = vga_pois_solver_mat_newton(fit_flash$flash.fit$Y,
+                                       Y,
+                                       1,
+                                       fitted(fit_flash),
                                        adjust_var_shape(sigma2,var_type,n,p),
-                                       maxiter = maxiter_vga,
-                                       tol=vga_tol,return_V = TRUE)
+                                       maxiter = vga_control$maxiter_vga,
+                                       tol=vga_control$vga_tol,return_V = TRUE)
       fit_flash$flash.fit$Y = res$M
-
-      if(est_f0 | est_l0){
-        if(est_f0){
-          f0 = colsums_Y/(colSums(l0*exp(res$M+res$V/2)))
-        }
-        if(est_l0){
-          l0 = rowsums_Y/(rowSums(exp(res$M+res$V/2)%*%diag(f0)))
-        }
-        const = sum(Y*log(tcrossprod(l0,f0))) - sly
-      }
-
-
 
       ### These are for ELBO calculation later ###
       ############################################################
       sym = sum(Y*res$M)
-      ssexp = sum(tcrossprod(l0,f0)*exp(res$M+res$V/2))
+      ssexp = sum(exp(res$M+res$V/2))
       slogv = sum(log(res$V)/2+0.9189385)
 
       ### This is for estimating sigma2
@@ -288,101 +284,66 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
         v_sum =rowSums(res$V)
       }
       ############################################################
-      if(est_sigma2){
-        sigma2=ebpmf_update_sigma2(fit_flash,sigma2,v_sum,var_type,cap_var_mean_ratio,a0,b0,n,p)
+      if(sigma2_control$est_sigma2){
+        sigma2=ebpmf_log_update_sigma2(fit_flash,sigma2,v_sum,var_type,
+                                       sigma2_control$cap_var_mean_ratio,sigma2_control$a0,sigma2_control$b0,n,p)
       }
       rm(res)
     }
 
-    t1 = Sys.time()
-    run_time_vga[iter] = difftime(t1,t0,units='secs')
-    if(return_sigma2_trace){
+    run_time_vga[iter] = difftime(Sys.time(),t0,units='secs')
+    if(sigma2_control$return_sigma2_trace){
       sigma2_trace = rbind(sigma2_trace,sigma2)
     }
 
-    ## solve flash
-    ## To timing the operations, I separate flash fits:
+    ## fit flash
     t0 = Sys.time()
-    fit_flash = flash.init(fit_flash$flash.fit$Y, S = sqrt(sigma2), var.type = NULL, S.dim = S.dim) %>%
-      flash.init.factors(init = fit_flash,ebnm.fn=ebnm.fn)
-    t2 = Sys.time()
-    run_time_flash_init_factor[iter] = difftime(t2,t0,units='secs')
-
-    if(iter%%add_greedy_every==0 & fit_flash$n.factors < Kmax_init){
-      if(add_greedy_init=='previous_init'){
-        if(K_changed){
-          init_vals = do.call(init.fn.flash,list(fit_flash$flash.fit))
-        }
-        fit_flash$flash.fit$init_vals = init_vals
-        fit_flash = flash.add.greedy(fit_flash, Kmax = 1,verbose = verbose_flash,
-                                     ebnm.fn=ebnm.fn,init.fn = init.fn.fix,
-                                     warmstart = add_greedy_warmstart,
-                                     extrapolate = add_greedy_extrapolate)
-      }else if(add_greedy_init=='new_init'){
-        fit_flash = flash.add.greedy(fit_flash, Kmax = add_greedy_Kmax,verbose = verbose_flash,
-                                     ebnm.fn=ebnm.fn,init.fn = init.fn.flash,
-                                     warmstart = add_greedy_warmstart,
-                                     extrapolate = add_greedy_extrapolate)
-      }
-      K_changed = (fit_flash$n.factors != K_trace[iter])
-    }
-    t3 = Sys.time()
-    run_time_flash_greedy[iter] = difftime(t3,t2,units='secs')
-
-    fit_flash = suppressWarnings(flash.backfit(fit_flash, verbose = verbose_flash,maxiter = maxiter_backfitting))
-    t4 = Sys.time()
-    run_time_flash_backfitting[iter] = difftime(t4,t3,units='secs')
-
-    fit_flash = flash.nullcheck(fit_flash, verbose = verbose_flash)
-    t5 = Sys.time()
-    run_time_flash_nullcheck[iter] = difftime(t5,t4,units='secs')
-
+    fit_flash = ebpmf_log_flash_update(fit_flash,sigma2,ones_n,ones_p,iter,flash_control$loadings_sign,flash_control$factors_sign,
+                                       flash_control$ebnm.fn,flash_control$ebnm.fn.offset,
+                                       S.dim,flash_control$verbose_flash,flash_control$fix_l0,flash_control$fix_f0,flash_control$Kmax,
+                                       flash_control$add_greedy_extrapolate,flash_control$maxiter_backfitting,flash_control$add_greedy_every,
+                                       flash_control$add_greedy_Kmax,flash_control$add_greedy_warmstart,
+                                       flash_control$init.fn.flash,flash_control$no_backfit_kset)
+    run_time_flash[iter] = difftime(Sys.time(),t0,units='secs')
     K_trace[iter+1] = fit_flash$n.factors
     KL_LF = sum(ff.KL(fit_flash$flash.fit,1)) + sum(ff.KL(fit_flash$flash.fit,2))
 
-
-
     # check convergence
-    obj[iter + 1] = calc_ebpmf_log_obj(n,p,sym,ssexp,slogv,v_sum,sigma2,fit_flash$flash.fit$R2,KL_LF,const,var_offset_for_obj,a0,b0)
-    if(abs(obj[iter + 1]-obj[iter])/num_points< conv_tol){
+    obj[iter + 1] = calc_ebpmf_log_obj(n,p,sym,ssexp,slogv,v_sum,sigma2,fit_flash$flash.fit$R2,KL_LF,const,var_offset_for_obj,sigma2_control$a0,sigma2_control$b0)
+    if((obj[iter + 1]-obj[iter])/num_points< general_control$conv_tol){
       break
     }
     if(verbose){
-      if(iter%%printevery==0){
-        cat(paste('iter ',iter, ', elbo=',round(obj[iter+1],log10(1/conv_tol)),", K=",fit_flash$n.factors,sep = ''))
+      if(iter%%general_control$printevery==0){
+        cat(paste('iter ',iter, ', avg elbo=',round(obj[iter+1]/num_points,log10(1/general_control$conv_tol)),", K=",fit_flash$n.factors,sep = ''))
         cat('\n')
       }
     }
 
 
-    if(iter%%save_fit_every==0){
+    if(iter%%general_control$save_fit_every==0){
       saveRDS(list(fit_flash=list(L.pm=fit_flash$L.pm,F.pm = fit_flash$F.pm,pve = fit_flash$pve),
                    elbo=obj[length(obj)],
                    K_trace=K_trace,
                    elbo_trace=obj,
                    sigma2 = sigma2,
                    sigma2_trace = sigma2_trace,
-                   l0=l0,
-                   f0=f0,
                    run_time = difftime(Sys.time(),start_time,units='auto'),
                    run_time_break_down = list(run_time_vga_init = run_time_vga_init,
                                               run_time_flash_init = run_time_flash_init,
                                               run_time_vga = run_time_vga,
-                                              run_time_flash_init_factor = run_time_flash_init_factor,
-                                              run_time_flash_greedy = run_time_flash_greedy,
-                                              run_time_flash_backfitting = run_time_flash_backfitting,
-                                              run_time_flash_nullcheck = run_time_flash_nullcheck)),
-              file=paste(save_fit_path,save_fit_name,'_iter',iter,'.rds',sep=''))
+                                              run_time_flash = run_time_flash)),
+              file=paste(general_control$save_fit_path,general_control$save_fit_name,'_iter',iter,'.rds',sep=''))
     }
 
-    if(iter%%garbage_collection_every==0){
-      gc()
-    }
+    if(iter%%general_control$garbage_collection_every==0){gc()}
 
 
   }
 
   end_time = Sys.time()
+  if(!general_control$save_latent_M){fit_flash$flash.fit$Y = NULL}
+
   return(list(fit_flash=fit_flash,
               elbo=obj[length(obj)],
               K_trace=K_trace,
@@ -390,15 +351,11 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
               sigma2 = sigma2,
               sigma2_trace = sigma2_trace,
               init_val=init_val,
-              l0=l0,f0=f0,
               run_time = difftime(end_time,start_time,units='auto'),
               run_time_break_down = list(run_time_vga_init = run_time_vga_init,
                                          run_time_flash_init = run_time_flash_init,
                                          run_time_vga = run_time_vga,
-                                         run_time_flash_init_factor = run_time_flash_init_factor,
-                                         run_time_flash_greedy = run_time_flash_greedy,
-                                         run_time_flash_backfitting = run_time_flash_backfitting,
-                                         run_time_flash_nullcheck = run_time_flash_nullcheck)))
+                                         run_time_flash = run_time_flash)))
 }
 
 #'@title Calc elbo
@@ -409,7 +366,7 @@ calc_ebpmf_log_obj = function(n,p,sym,ssexp,slogv,sv,sigma2,R2,KL_LF,const,ss,a0
 }
 
 #'@title update sigma2
-ebpmf_update_sigma2 = function(fit_flash,sigma2,v_sum,var_type,cap_var_mean_ratio,a0,b0,n,p){
+ebpmf_log_update_sigma2 = function(fit_flash,sigma2,v_sum,var_type,cap_var_mean_ratio,a0,b0,n,p){
   if(var_type=='constant'){
     if(cap_var_mean_ratio>0){
       if(((exp(sigma2)-1)*exp(max(fitted(fit_flash))))>cap_var_mean_ratio){
@@ -483,7 +440,7 @@ adjust_var_shape = function(sigma2,var_type,n,p){
 
 my_ifelse = function(test,yes,no){
   if(test){
-    return(tes)
+    return(yes)
   }else{
     return(no)
   }

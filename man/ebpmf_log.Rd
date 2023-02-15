@@ -2,89 +2,119 @@
 % Please edit documentation in R/ebpmf_log.R
 \name{ebpmf_log}
 \alias{ebpmf_log}
-\title{Fit empirical Bayes POisson matrix factorization with log link}
+\title{Fit empirical Bayes Poisson matrix factorization with log link function}
 \usage{
 ebpmf_log(
   Y,
   l0 = NULL,
   f0 = NULL,
   var_type = "by_col",
-  sigma2 = NULL,
-  est_sigma2 = TRUE,
+  sigma2_init = NULL,
   M_init = NULL,
-  ebnm.fn = ebnm::ebnm_point_normal,
-  loadings_sign = 0,
-  factors_sign = 0,
-  Kmax_init = 30,
-  add_greedy_Kmax = 1,
-  add_greedy_warmstart = TRUE,
-  add_greedy_extrapolate = FALSE,
-  add_greedy_init = "new_init",
-  add_greedy_every = 1,
-  batch_size = nrow(Y),
-  maxiter = 100,
-  maxiter_backfitting = 1,
-  maxiter_vga = 10,
-  conv_tol = 1e-05,
-  init_tol = 1e-05,
-  vga_tol = 0.001,
-  verbose_flash = 0,
-  printevery = 10,
-  verbose = FALSE,
-  n_cores = 1,
-  a0 = 1,
-  b0 = 1,
-  cap_var_mean_ratio = 0.1,
-  save_init_val = FALSE,
-  return_sigma2_trace = FALSE,
-  garbage_collection_every = 10,
-  est_l0 = FALSE,
-  est_f0 = TRUE,
-  save_fit_every = Inf,
-  save_fit_path = NULL,
-  save_fit_name = NULL
+  general_control = list(),
+  vga_control = list(),
+  flash_control = list(),
+  sigma2_control = list(),
+  verbose = TRUE
 )
 }
 \arguments{
 \item{Y}{count data matrix, can be sparse format}
 
-\item{l0, f0}{The scaling loadings and factors.}
+\item{l0, f0}{The background loadings and factors, see the model in ‘Details’.}
 
-\item{sigma2}{the variance term}
+\item{var_type}{variance type, "by_row", "by_col" or "constant", see the model in ‘Details’}
 
-\item{est_sigma2}{whether estimate the variance term or fix it at sigma2}
+\item{sigma2_init}{the unstructured variance init value}
 
-\item{ebnm.fn}{see `?flash`.}
+\item{M_init}{the initial value for latent M}
 
-\item{loadings_sign, factors_sign}{see `?init.fn.default`, must match ebnm.fn}
+\item{general_control}{A list of parameters controlling the behavior of the algorithm. See ‘Details’.}
 
-\item{Kmax_init}{the Kmax in the first flash fit, and for the subsequent flash fit.}
+\item{vga_control}{A list of parameters controlling the behavior of the VGA step. See ‘Details’.}
 
-\item{add_greedy_Kmax}{The Kmax in add_greedy in iterations}
+\item{flash_control}{A list of parameters controlling the behavior of the flash step. See ‘Details’.}
 
-\item{add_greedy_warmstart, add_greedy_extrapolate}{see `?flash.add.greedy`}
+\item{sigma2_control}{A list of parameters controlling the behavior of updating variance. See ‘Details’.}
 
-\item{add_greedy_init}{either 'previous_init' or "new_init"}
-
-\item{add_greedy_every}{perform flash add greedy every `add_greedy_every` iterations.}
-
-\item{batch_size}{reduce memory usage for vga step by looping subsets of dataset.}
-
-\item{maxiter, maxiter_backfitting, maxiter_vga}{max iterations for the splitting, backfitting, vga.}
-
-\item{conv_tol, init_tol, vga_tol}{tolerance for convergence, initialization vga fit, and vga fit in iterations}
-
-\item{a0, b0}{Inverse-Gamma(a0,b0) prior on sigma2 for regularization.}
-
-\item{cap_var_mean_ratio}{only update sigma2 when if var/mean > (1+cap_var_mean_ratio). i.e. when overdispersion is low enough, stop updating sigma2 to boost convergence.}
-
-\item{garbage_collection_every}{perform gc() to reduce memory usage.}
-
-\item{est_l0, est_f0}{whether update l0,f0 or fix them.}
+\item{verbose}{TRUE to print the model fitting progress}
 }
 \value{
-fitted object
+A list of:
+ \item{fit_flash:}{fitted flash object}
+ \item{elbo:}{evidence lower bound value}
+ \item{K_trace:}{trace of number of factors}
+ \item{elbo_trace:}{trace of elbo}
+ \item{sigma2:}{the variance estimates}
+ \item{run_time:}{run time of the algorithm}
 }
 \description{
-Fit empirical Bayes POisson matrix factorization with log link
+Fit empirical Bayes Poisson matrix factorization with log link function
+}
+\details{
+The model is
+\deqn{y_{ij}\sim Poisson(\exp(\mu_{ij})),}
+\deqn{\mu_{ij} = l_{i0} + f_{j0} + \sum_k l_{ik}f_{jk} + \epsilon_{ij},}
+\deqn{l_{i0}\sim g_{l_0}(\cdot), f_{j0}\sim g_{f_0}(\cdot),}
+\deqn{l_{ik}\sim g_{l_k}(\cdot),f_{jk}\sim g_{f_k}(\cdot),}
+\deqn{\epsilon_{ij}\sim N(0,\sigma^2_{ij}).}
+
+The \code{general_control} argument is a list in which any of the following
+named components will override the default algorithm settings (as
+defined by \code{ebpmf_log_general_control_default}):
+\describe{
+\item{\code{batch_size}}{reduce memory usage for vga step by looping subsets of dataset.}
+\item{\code{maxiter}}{max iteration allowed.}
+\item{\code{conv_tol}}{tolerance for convergence}
+\item{\code{init_tol}}{tolerance for initialization}
+\item{\code{printevery}}{print progress over iterations}
+\item{\code{garbage_collection_every}}{perform `gc()` to reduce memory usage}
+\item{\code{save_init_val}}{whether return initailization values}
+\item{\code{save_latent_M}}{whether return latent M, can be very large}
+\item{\code{save_fit_every}}{save intermediate results?}
+\item{\code{save_fit_path}}{save intermediate results path}
+\item{\code{save_fit_name}}{save intermediate name}
+}
+
+The \code{flash_control} argument is a list in which any of the following
+named components will override the default algorithm settings (as
+defined by \code{ebpmf_log_flash_control_default}):
+
+\describe{
+
+\item{\code{ebnm.fn}}{see `?flash`.}
+\item{\code{ebnm.fn.offset}}{The prior for \eqn{l_0}, \eqn{f_0} if not fixing them.}
+\item{\code{loadings_sign}}{see `?init.fn.default`, must match ebnm.fn}
+\item{\code{factors_sign}}{see `?init.fn.default`, must match ebnm.fn}
+\item{\code{fix_l0}}{fix  \eqn{l_0}?}
+\item{\code{fix_f0}}{fix  \eqn{f_0}?}
+\item{\code{Kmax}}{see `?flash`.}
+\item{\code{add_greedy_Kmax}}{The Kmax in add_greedy in iterations}
+\item{\code{add_greedy_warmstart}}{see `?flash.add.greedy`}
+\item{\code{add_greedy_extrapolate}}{see `?flash.add.greedy`}
+\item{\code{add_greedy_every}}{perform flash add greedy every `add_greedy_every` iterations.}
+\item{\code{maxiter_backfitting}}{max iterations for the flash backfitting}
+\item{\code{verbose_flash}}{whether print flash updates}
+}
+
+The \code{vga_control} argument is a list in which any of the following
+named components will override the default algorithm settings (as
+defined by \code{ebpmf_log_vga_control_default}):
+
+\describe{
+\item{\code{maxiter_vga}}{max iterations for vga step Newton's method}
+\item{\code{vga_tol}}{tolerance for stopping the optimization.}
+\item{\code{n_cores}}{Can utilize more than 1 core to perform vga, using `mclapply` function.}
+}
+
+The \code{sigma2_control} argument is a list in which any of the following
+named components will override the default algorithm settings (as
+defined by \code{ebpmf_log_sigma2_control_default}):
+
+\describe{
+\item{\code{est_sigma2}}{whether estimate the variance term or fix it at sigma2_init}
+\item{\code{a0,b0}}{Inverse-Gamma(a0,b0) prior on sigma2 for regularization.}
+\item{\code{cap_var_mean_ratio}}{only update sigma2 when if var/mean > (1+cap_var_mean_ratio). i.e. when overdispersion is low enough, stop updating sigma2 to boost convergence.}
+\item{\code{return_sigma2_trace}}{internal usage only}
+}
 }

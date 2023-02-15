@@ -1,14 +1,14 @@
 #'@title this function initializes the ebpmf with log link
 #'@description sigma2, M needs initialization.
-#'@importFrom vebpm ebpm_normal
+#'
 
 ebpmf_log_init = function(Y,l0,f0,sigma2,
-                          var_type,
-                          M_init,
-                          verbose,
-                          n_cores,
-                          init_tol,
-                          printevery,
+                              var_type,
+                              M_init,
+                              verbose,
+                              n_cores,
+                              init_tol,
+                              printevery,
                           L_init=NULL,
                           F_init=NULL){
   n = nrow(Y)
@@ -29,7 +29,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
       if(verbose){
         cat('Solving VGA constant...For large matrix this may require large memory usage')
       }
-      init_val = suppressWarnings(ebpm_normal(as.vector(Y),g_init = list(mean=as.vector(tcrossprod(l0,f0)),var=NULL),fix_g = c(T,F),tol=init_tol))
+      init_val = suppressWarnings(pois_mean_GG(as.vector(Y),as.vector(tcrossprod(l0,f0)),prior_mean = 0,prior_var = sigma2,tol=init_tol))
       M = matrix(init_val$posterior$mean_log,nrow=n,ncol=p)
       sigma2_init = init_val$fitted_g$var
       rm(init_val)
@@ -44,7 +44,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
             cat(paste(i,'...'))
           }
         }
-        fit = suppressWarnings(ebpm_normal(Y[i,],g_init = list(mean=l0[i]*f0,var=NULL),fix_g = c(T,F),tol=init_tol))
+        fit = suppressWarnings(pois_mean_GG(Y[i,],l0[i]*f0,prior_mean = 0,prior_var = sigma2[i],tol=init_tol))
         return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
       },mc.cores = n_cores)
       sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
@@ -63,7 +63,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
               cat(paste(i,'...'))
             }
           }
-          fit = suppressWarnings(ebpm_normal(Y[,i],g_init = list(mean=l0*f0[i],var=NULL),fix_g = c(T,F),tol=init_tol))
+          fit = suppressWarnings(pois_mean_GG(Y[,i],l0*f0[i],prior_mean = 0,prior_var = sigma2[i],tol=init_tol))
           return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
         },mc.cores = n_cores)
         sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
@@ -78,7 +78,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
               cat(paste(j,'...'))
             }
           }
-          fit = suppressWarnings(ebpm_normal(Y[,j],g_init = list(mean=l0*f0[j],var=NULL),fix_g = c(T,F),tol=init_tol))
+          fit = suppressWarnings(pois_mean_GG(Y[,j],l0*f0[j],prior_mean = 0,prior_var = sigma2[j],tol=init_tol))
           M[,j] = fit$posterior$mean_log
           sigma2_init[j] = fit$fitted_g$var
         }
