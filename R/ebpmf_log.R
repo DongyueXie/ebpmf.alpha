@@ -58,7 +58,9 @@
 #'\item{\code{add_greedy_warmstart}}{see `?flash.add.greedy`}
 #'\item{\code{add_greedy_extrapolate}}{see `?flash.add.greedy`}
 #'\item{\code{add_greedy_every}}{perform flash add greedy every `add_greedy_every` iterations.}
-#'\item{\code{maxiter_backfitting}}{max iterations for the flash backfitting}
+#'\item{\code{maxiter_backfitting}}{max iterations for the flash backfitting,see `?flash.backfit`}
+#'\item{\code{backfit_extrapolate}}{see `?flash.backfit`}
+#'\item{\code{backfit_warmstart}}{see `?flash.backfit`}
 #'\item{\code{verbose_flash}}{whether print flash updates}
 #'}
 #'
@@ -192,6 +194,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                                    flash_control$ebnm.fn,flash_control$ebnm.fn.offset,
                                    S.dim,flash_control$verbose_flash,flash_control$fix_l0,flash_control$fix_f0,flash_control$Kmax,
                                    flash_control$add_greedy_extrapolate,flash_control$maxiter_backfitting,
+                                   flash_control$backfit_extrapolate,flash_control$backfit_warmstart,
                                    flash_control$init.fn.flash,flash_control$no_backfit_kset)
   rm(M)
   gc()
@@ -303,6 +306,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                                        S.dim,flash_control$verbose_flash,flash_control$fix_l0,flash_control$fix_f0,flash_control$Kmax,
                                        flash_control$add_greedy_extrapolate,flash_control$maxiter_backfitting,flash_control$add_greedy_every,
                                        flash_control$add_greedy_Kmax,flash_control$add_greedy_warmstart,
+                                       flash_control$backfit_extrapolate,flash_control$backfit_warmstart,
                                        flash_control$init.fn.flash,flash_control$no_backfit_kset)
     run_time_flash[iter] = difftime(Sys.time(),t0,units='secs')
     K_trace[iter+1] = fit_flash$n.factors

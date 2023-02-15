@@ -22,6 +22,8 @@ ebpmf_log_flash_init(
   Kmax,
   add_greedy_extrapolate,
   maxiter_backfitting,
+  backfit_extrapolate,
+  backfit_warmstart,
   init.fn.flash,
   no_backfit_kset
 )

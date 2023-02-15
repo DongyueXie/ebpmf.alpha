@@ -93,7 +93,9 @@ defined by \code{ebpmf_log_flash_control_default}):
 \item{\code{add_greedy_warmstart}}{see `?flash.add.greedy`}
 \item{\code{add_greedy_extrapolate}}{see `?flash.add.greedy`}
 \item{\code{add_greedy_every}}{perform flash add greedy every `add_greedy_every` iterations.}
-\item{\code{maxiter_backfitting}}{max iterations for the flash backfitting}
+\item{\code{maxiter_backfitting}}{max iterations for the flash backfitting,see `?flash.backfit`}
+\item{\code{backfit_extrapolate}}{see `?flash.backfit`}
+\item{\code{backfit_warmstart}}{see `?flash.backfit`}
 \item{\code{verbose_flash}}{whether print flash updates}
 }
 

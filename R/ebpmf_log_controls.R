@@ -59,6 +59,8 @@ ebpmf_log_flash_control_default = function(){
               add_greedy_warmstart = TRUE,
               add_greedy_extrapolate = FALSE,
               add_greedy_every = 1,
+              backfit_extrapolate = TRUE,
+              backfit_warmstart = TRUE,
               maxiter_backfitting = 1,
               verbose_flash=0
   ))

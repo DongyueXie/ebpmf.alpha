@@ -2,6 +2,7 @@
 #'@importFrom ebnm ebnm_normal
 ebpmf_log_flash_init = function(M,sigma2,l0,f0,ones_n,ones_p,loadings_sign,factors_sign,ebnm.fn,ebnm.fn.offset,
                                 S.dim,verbose_flash,fix_l0,fix_f0,Kmax,add_greedy_extrapolate,maxiter_backfitting,
+                                backfit_extrapolate,backfit_warmstart,
                                 init.fn.flash,no_backfit_kset){
 
   n = nrow(M)
@@ -38,9 +39,10 @@ ebpmf_log_flash_init = function(M,sigma2,l0,f0,ones_n,ones_p,loadings_sign,facto
       flash.fix.factors(kset = 2, mode = 1)
   }
 
-  fit_flash = suppressWarnings(flash.add.greedy(fit_flash, Kmax = Kmax,ebnm.fn = ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate) %>%
-              flash.backfit(kset = (1:fit_flash$n.factors)[!(1:fit_flash$n.factors)%in%no_backfit_kset],maxiter = maxiter_backfitting)%>%
-              flash.nullcheck())
+  fit_flash = flash.add.greedy(fit_flash, Kmax = Kmax,ebnm.fn = ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate)
+  kset_backfit = (1:fit_flash$n.factors)[!(1:fit_flash$n.factors)%in%no_backfit_kset]
+  fit_flash = suppressWarnings(flash.backfit(fit_flash,kset = kset_backfit,maxiter = maxiter_backfitting,extrapolate=backfit_extrapolate,warmstart = backfit_warmstart)%>%
+                                 flash.nullcheck(kset=kset_backfit))
 
   if(fit_flash$n.factors<=2){
     stop('No structure found in initialization. How to deal with this issue?')

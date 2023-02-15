@@ -3,6 +3,7 @@
 ebpmf_log_flash_update = function(fit_flash,sigma2,ones_n,ones_p,iter,loadings_sign,factors_sign,ebnm.fn,ebnm.fn.offset,
                                   S.dim,verbose_flash,fix_l0,fix_f0,Kmax,add_greedy_extrapolate,maxiter_backfitting,
                                   add_greedy_every,add_greedy_Kmax,add_greedy_warmstart,
+                                  backfit_extrapolate,backfit_warmstart,
                                   init.fn.flash,no_backfit_kset){
 
   ## create an init flash.fit obj for flash.init.factor
@@ -58,8 +59,9 @@ ebpmf_log_flash_update = function(fit_flash,sigma2,ones_n,ones_p,iter,loadings_s
                                  extrapolate = add_greedy_extrapolate)
   }
 
-  fit_flash = suppressWarnings(flash.backfit(fit_flash, kset = (1:fit_flash$n.factors)[!(1:fit_flash$n.factors)%in%no_backfit_kset],maxiter = maxiter_backfitting)%>%
-                                 flash.nullcheck())
+  kset_backfit = (1:fit_flash$n.factors)[!(1:fit_flash$n.factors)%in%no_backfit_kset]
+  fit_flash = suppressWarnings(flash.backfit(fit_flash, kset = kset_backfit,maxiter = maxiter_backfitting,extrapolate = backfit_extrapolate,warmstart = backfit_warmstart)%>%
+                                 flash.nullcheck(kset=kset_backfit))
 
 
   fit_flash
