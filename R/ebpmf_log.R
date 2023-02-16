@@ -113,10 +113,10 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
   num_points = n*p
 
   if(is.null(l0)){
-    l0 = cbind(rowMeans(Y))
+    l0 = log(cbind(rowMeans(Y)))
   }
   if(is.null(f0)){
-    f0 = cbind(colSums(Y)/sum(l0))
+    f0 = log(cbind(colSums(Y)/sum(exp(l0))))
   }
   if(length(l0)==1){
     l0 = cbind(rep(l0,n))
