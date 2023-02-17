@@ -23,7 +23,7 @@ ebpmf_log_sigma2_control_default = function(){
   return(list(est_sigma2 = TRUE,
               a0 = 1,
               b0 = 1,
-              cap_var_mean_ratio = 0.1,
+              cap_var_mean_ratio = 0,
               return_sigma2_trace = FALSE))
 }
 

@@ -373,7 +373,8 @@ calc_ebpmf_log_obj = function(n,p,sym,ssexp,slogv,sv,sigma2,R2,KL_LF,const,ss,a0
 ebpmf_log_update_sigma2 = function(fit_flash,sigma2,v_sum,var_type,cap_var_mean_ratio,a0,b0,n,p){
   if(var_type=='constant'){
     if(cap_var_mean_ratio>0){
-      if(((exp(sigma2)-1)*exp(max(fitted(fit_flash))))>cap_var_mean_ratio){
+      # ((exp(sigma2)-1)*exp(max(fitted(fit_flash))))>cap_var_mean_ratio
+      if(max(fitted(fit_flash)) > (log(cap_var_mean_ratio)-log((exp(sigma2)-1))-sigma2/2)){
         sigma2 = ((v_sum +sum(fit_flash$flash.fit$R2))/2+b0)/(n*p/2+a0+1)
       }
     }else{
@@ -381,7 +382,8 @@ ebpmf_log_update_sigma2 = function(fit_flash,sigma2,v_sum,var_type,cap_var_mean_
     }
   }else if(var_type=='by_row'){
     if(cap_var_mean_ratio>0){
-      update_idx = which(((exp(sigma2)-1)*exp(rowMaxs(fitted(fit_flash))))>cap_var_mean_ratio)
+      update_idx = which(rowMaxs(fitted(fit_flash)) > (log(cap_var_mean_ratio)-log((exp(sigma2)-1))-sigma2/2))
+      #update_idx = which(((exp(sigma2)-1)*exp(rowMaxs(fitted(fit_flash))))>cap_var_mean_ratio)
       if(!is.null(update_idx)){
         sigma2[update_idx] = (((v_sum+fit_flash$flash.fit$R2)/2+b0)/(p/2+a0+1))[update_idx]
       }
@@ -390,7 +392,8 @@ ebpmf_log_update_sigma2 = function(fit_flash,sigma2,v_sum,var_type,cap_var_mean_
     }
   }else if(var_type=='by_col'){
     if(cap_var_mean_ratio>0){
-      update_idx = which(((exp(sigma2)-1)*exp(colMaxs(fitted(fit_flash))))>cap_var_mean_ratio)
+      update_idx = which(colMaxs(fitted(fit_flash)) > (log(cap_var_mean_ratio)-log((exp(sigma2)-1))-sigma2/2))
+      #update_idx = which(((exp(sigma2)-1)*exp(colMaxs(fitted(fit_flash))))>cap_var_mean_ratio)
       if(!is.null(update_idx)){
         sigma2[update_idx] = (((v_sum+fit_flash$flash.fit$R2)/2+b0)/(n/2+a0+1))[update_idx]
       }
