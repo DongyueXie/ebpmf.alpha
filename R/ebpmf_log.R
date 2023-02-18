@@ -35,6 +35,7 @@
 #'\item{\code{printevery}}{print progress}
 #'\item{\code{single_gene_ebpm}}{whether use ebpm_exponential_mixture for single gene model, as init for vga}
 #'\item{\code{n_cores}}{Can utilize more than 1 core to perform initialization, using `mclapply` function.}
+#'\item{\code{n_refit_flash_init}}{The times to refit flash using another seed if no structure was found in initialization}
 #'}
 #'
 #'The \code{general_control} argument is a list in which any of the following
@@ -206,7 +207,8 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                                    S.dim,flash_control$verbose_flash,flash_control$fix_l0,flash_control$fix_f0,flash_control$Kmax,
                                    flash_control$add_greedy_extrapolate,flash_control$maxiter_backfitting,
                                    flash_control$backfit_extrapolate,flash_control$backfit_warmstart,
-                                   flash_control$init.fn.flash,flash_control$no_backfit_kset)
+                                   flash_control$init.fn.flash,flash_control$no_backfit_kset,
+                                   init_control$n_refit_flash_init)
   rm(M)
   gc()
   run_time_flash_init =  difftime(Sys.time(),t0,units = 'secs')

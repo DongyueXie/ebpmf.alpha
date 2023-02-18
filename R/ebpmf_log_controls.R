@@ -5,7 +5,8 @@ ebpmf_log_init_control_default = function(){
               printevery = 100,
               single_gene_ebpm = TRUE,
               sigma2_init = NULL,
-              M_init = NULL
+              M_init = NULL,
+              n_refit_flash_init=5
               ))
 }
 

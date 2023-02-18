@@ -3,7 +3,7 @@
 ebpmf_log_flash_init = function(M,sigma2,l0,f0,ones_n,ones_p,loadings_sign,factors_sign,ebnm.fn,ebnm.fn.offset,
                                 S.dim,verbose_flash,fix_l0,fix_f0,Kmax,add_greedy_extrapolate,maxiter_backfitting,
                                 backfit_extrapolate,backfit_warmstart,
-                                init.fn.flash,no_backfit_kset){
+                                init.fn.flash,no_backfit_kset,n_refit_max){
 
   n = nrow(M)
   p = ncol(M)
@@ -44,8 +44,22 @@ ebpmf_log_flash_init = function(M,sigma2,l0,f0,ones_n,ones_p,loadings_sign,facto
   fit_flash = suppressWarnings(flash.backfit(fit_flash,kset = kset_backfit,maxiter = maxiter_backfitting,extrapolate=backfit_extrapolate,warmstart = backfit_warmstart)%>%
                                  flash.nullcheck(kset=kset_backfit))
 
+  n_refit = 0
+  while(fit_flash$n.factors<=2&n_refit<=n_refit_max){
+    n_refit = n_refit + 1
+    warning(paste('No new structure found yet. Re-trying...',n_refit))
+    init.fn.flash = function(f){init.fn.default(f, dim.signs = c(loadings_sign, factors_sign),seed = n_refit)}
+    fit_flash = flash.add.greedy(fit_flash, Kmax = Kmax,ebnm.fn = ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate)
+    if(n_refit==n_refit_max){
+      fit_flash = suppressWarnings(flash.backfit(fit_flash,kset = kset_backfit,maxiter = maxiter_backfitting,extrapolate=backfit_extrapolate,warmstart = backfit_warmstart))
+    }else{
+      fit_flash = suppressWarnings(flash.backfit(fit_flash,kset = kset_backfit,maxiter = maxiter_backfitting,extrapolate=backfit_extrapolate,warmstart = backfit_warmstart)%>%
+                                     flash.nullcheck(kset=kset_backfit))
+    }
+  }
+
   if(fit_flash$n.factors<=2){
-    stop('No structure found in initialization. How to deal with this issue?')
+    warning('No new structure found in initialization.')
   }
 
   return(fit_flash)

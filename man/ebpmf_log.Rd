@@ -67,6 +67,7 @@ defined by \code{ebpmf_log_init_control_default}):
 \item{\code{printevery}}{print progress}
 \item{\code{single_gene_ebpm}}{whether use ebpm_exponential_mixture for single gene model, as init for vga}
 \item{\code{n_cores}}{Can utilize more than 1 core to perform initialization, using `mclapply` function.}
+\item{\code{n_refit_flash_init}}{The times to refit flash using another seed if no structure was found in initialization}
 }
 
 The \code{general_control} argument is a list in which any of the following
