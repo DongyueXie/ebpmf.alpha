@@ -9,12 +9,11 @@ ebpmf_log(
   l0 = NULL,
   f0 = NULL,
   var_type = "by_col",
-  sigma2_init = NULL,
-  M_init = NULL,
   general_control = list(),
   vga_control = list(),
   flash_control = list(),
   sigma2_control = list(),
+  init_control = list(),
   verbose = TRUE
 )
 }
@@ -24,10 +23,6 @@ ebpmf_log(
 \item{l0, f0}{The background loadings and factors, see the model in ‘Details’.}
 
 \item{var_type}{variance type, "by_row", "by_col" or "constant", see the model in ‘Details’}
-
-\item{sigma2_init}{the unstructured variance init value}
-
-\item{M_init}{the initial value for latent M}
 
 \item{general_control}{A list of parameters controlling the behavior of the algorithm. See ‘Details’.}
 
@@ -59,6 +54,21 @@ The model is
 \deqn{l_{ik}\sim g_{l_k}(\cdot),f_{jk}\sim g_{f_k}(\cdot),}
 \deqn{\epsilon_{ij}\sim N(0,\sigma^2_{ij}).}
 
+
+The \code{init_control} argument is a list in which any of the following
+named components will override the default algorithm settings (as
+defined by \code{ebpmf_log_init_control_default}):
+
+\describe{
+\item{\code{sigma2_init}}{The init value of sigma2}
+\item{\code{M_init}}{the initial value for latent M}
+\item{\code{init_tol}}{tolerance for initialization}
+\item{\code{verbose}}{print progress}
+\item{\code{printevery}}{print progress}
+\item{\code{single_gene_ebpm}}{whether use ebpm_exponential_mixture for single gene model, as init for vga}
+\item{\code{n_cores}}{Can utilize more than 1 core to perform initialization, using `mclapply` function.}
+}
+
 The \code{general_control} argument is a list in which any of the following
 named components will override the default algorithm settings (as
 defined by \code{ebpmf_log_general_control_default}):
@@ -66,7 +76,6 @@ defined by \code{ebpmf_log_general_control_default}):
 \item{\code{batch_size}}{reduce memory usage for vga step by looping subsets of dataset.}
 \item{\code{maxiter}}{max iteration allowed.}
 \item{\code{conv_tol}}{tolerance for convergence}
-\item{\code{init_tol}}{tolerance for initialization}
 \item{\code{printevery}}{print progress over iterations}
 \item{\code{garbage_collection_every}}{perform `gc()` to reduce memory usage}
 \item{\code{save_init_val}}{whether return initailization values}
@@ -106,7 +115,6 @@ defined by \code{ebpmf_log_vga_control_default}):
 \describe{
 \item{\code{maxiter_vga}}{max iterations for vga step Newton's method}
 \item{\code{vga_tol}}{tolerance for stopping the optimization.}
-\item{\code{n_cores}}{Can utilize more than 1 core to perform vga, using `mclapply` function.}
 }
 
 The \code{sigma2_control} argument is a list in which any of the following

@@ -1,6 +1,7 @@
 #'@title this function initializes the ebpmf with log link
 #'@description sigma2, M needs initialization.
 #'@importFrom vebpm ebpm_normal
+#'@importFrom ebpm ebpm_exponential_mixture
 
 ebpmf_log_init = function(Y,l0,f0,sigma2,
                           var_type,
@@ -9,6 +10,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
                           n_cores,
                           init_tol,
                           printevery,
+                          single_gene_ebpm=TRUE,
                           L_init=NULL,
                           F_init=NULL){
   n = nrow(Y)
@@ -29,7 +31,19 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
       if(verbose){
         cat('Solving VGA constant...For large matrix this may require large memory usage')
       }
-      init_val = suppressWarnings(ebpm_normal(as.vector(Y),g_init = list(mean=as.vector(outer(l0,f0,FUN='+')),var=NULL),fix_g = c(T,F),tol=init_tol))
+      if(single_gene_ebpm){
+        init_val = ebpm_exponential_mixture(as.vector(Y),s = exp(as.vector(outer(l0,f0,FUN='+'))))
+        init_var_vga = mean(init_val$posterior$mean_log^2)
+        init_val = suppressWarnings(ebpm_normal(as.vector(Y),
+                                                g_init = list(mean=as.vector(outer(l0,f0,FUN='+')),var=init_var_vga),
+                                                q_init = list(m_init = init_val$posterior$mean_log,v_init=init_var_vga),
+                                                fix_g = c(TRUE,FALSE),tol=init_tol))
+      }else{
+        init_val = suppressWarnings(ebpm_normal(as.vector(Y),
+                                                g_init = list(mean=as.vector(outer(l0,f0,FUN='+')),var=NULL),
+                                                fix_g = c(TRUE,FALSE),tol=init_tol))
+      }
+
       M = matrix(init_val$posterior$mean_log,nrow=n,ncol=p)
       sigma2_init = init_val$fitted_g$var
       rm(init_val)
@@ -44,7 +58,19 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
             cat(paste(i,'...'))
           }
         }
-        fit = suppressWarnings(ebpm_normal(Y[i,],g_init = list(mean=l0[i]+f0,var=NULL),fix_g = c(T,F),tol=init_tol))
+        if(single_gene_ebpm){
+          fit = ebpm_exponential_mixture(Y[i,],s = drop(exp(l0[i]+f0)))
+          init_var_vga = mean(fit$posterior$mean_log^2)
+          fit = suppressWarnings(ebpm_normal(Y[i,],
+                                             g_init = list(mean=drop(l0[i]+f0),var=init_var_vga),
+                                             q_init = list(m_init=fit$posterior$mean_log,v_init = init_var_vga),
+                                             fix_g = c(TRUE,FALSE),tol=init_tol))
+        }else{
+          fit = suppressWarnings(ebpm_normal(Y[i,],
+                                             g_init = list(mean=drop(l0[i]+f0),var=NULL),
+                                             fix_g = c(TRUE,FALSE),tol=init_tol))
+        }
+
         return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
       },mc.cores = n_cores)
       sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
@@ -57,13 +83,27 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
       }
 
       if(n_cores>1){
-        init_val = mclapply(1:p,function(i){
+        init_val = mclapply(1:p,function(j){
           if(verbose){
-            if(i%%printevery==0){
-              cat(paste(i,'...'))
+            if(j%%printevery==0){
+              cat(paste(j,'...'))
             }
           }
-          fit = suppressWarnings(ebpm_normal(Y[,i],g_init = list(mean=l0+f0[i],var=NULL),fix_g = c(T,F),tol=init_tol))
+          if(single_gene_ebpm){
+            fit = ebpm_exponential_mixture(Y[,j],s = drop(exp(l0+f0[j])))
+            init_var_vga = mean(fit$posterior$mean_log^2)
+            fit = suppressWarnings(ebpm_normal(Y[,j],
+                                               g_init = list(mean=drop(l0+f0[j]),var=init_var_vga),
+                                               q_init = list(m_init=fit$posterior$mean_log,v_init = init_var_vga),
+                                               fix_g = c(TRUE,FALSE),tol=init_tol))
+          }else{
+            fit = ebpm_exponential_mixture(Y[,j],s = drop(exp(l0+f0[j])))
+            init_var_vga = mean(fit$posterior$mean_log^2)
+            fit = suppressWarnings(ebpm_normal(Y[,j],
+                                               g_init = list(mean=drop(l0+f0[j]),var=NULL),
+                                               fix_g = c(TRUE,FALSE),tol=init_tol))
+          }
+
           return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
         },mc.cores = n_cores)
         sigma2_init = unlist(lapply(init_val,function(fit){fit$sigma2}))
@@ -78,7 +118,20 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
               cat(paste(j,'...'))
             }
           }
-          fit = suppressWarnings(ebpm_normal(Y[,j],g_init = list(mean=l0+f0[j],var=NULL),fix_g = c(T,F),tol=init_tol))
+          if(single_gene_ebpm){
+            fit = ebpm_exponential_mixture(Y[,j],s = drop(exp(l0+f0[j])))
+            init_var_vga = mean(fit$posterior$mean_log^2)
+            fit = suppressWarnings(ebpm_normal(Y[,j],
+                                               g_init = list(mean=drop(l0+f0[j]),var=init_var_vga),
+                                               q_init = list(m_init=fit$posterior$mean_log,v_init = init_var_vga),
+                                               fix_g = c(TRUE,FALSE),tol=init_tol))
+          }else{
+            fit = ebpm_exponential_mixture(Y[,j],s = drop(exp(l0+f0[j])))
+            init_var_vga = mean(fit$posterior$mean_log^2)
+            fit = suppressWarnings(ebpm_normal(Y[,j],
+                                               g_init = list(mean=drop(l0+f0[j]),var=NULL),
+                                               fix_g = c(TRUE,FALSE),tol=init_tol))
+          }
           M[,j] = fit$posterior$mean_log
           sigma2_init[j] = fit$fitted_g$var
         }

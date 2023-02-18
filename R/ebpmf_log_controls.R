@@ -1,8 +1,19 @@
+ebpmf_log_init_control_default = function(){
+  return(list(n_cores=1,
+              init_tol = 1e-5,
+              verbose = TRUE,
+              printevery = 100,
+              single_gene_ebpm = TRUE,
+              sigma2_init = NULL,
+              M_init = NULL
+              ))
+}
+
+
 ebpmf_log_general_control_default = function(){
   return(list(batch_size = Inf,
               maxiter=50,
               conv_tol=1e-5,
-              init_tol = 1e-5,
               printevery=10,
               verbose=TRUE,
               save_init_val = FALSE,
@@ -15,8 +26,7 @@ ebpmf_log_general_control_default = function(){
 
 ebpmf_log_vga_control_default = function(){
   return(list(maxiter_vga = 10,
-         vga_tol = 1e-5,
-         n_cores = 1))
+         vga_tol = 1e-5))
 }
 
 ebpmf_log_sigma2_control_default = function(){

@@ -15,6 +15,7 @@ ebpmf_log_init(
   n_cores,
   init_tol,
   printevery,
+  single_gene_ebpm = TRUE,
   L_init = NULL,
   F_init = NULL
 )
