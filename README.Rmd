@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# stm
+# ebpmf
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -22,7 +22,7 @@ An R Package.
 
 ## Installation
 
-You can install the development version of `stm` from [GitHub](https://github.com/) with:
+You can install the development version of `ebpmf` from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
@@ -30,7 +30,7 @@ You can install the development version of `stm` from [GitHub](https://github.co
 # devtools::install_github("DongyueXie/smashrgen")
 # devtools::install_github("DongyueXie/smashr")
 # devtools::install_github("DongyueXie/ebpm")
-devtools::install_github("DongyueXie/stm")
+devtools::install_github("DongyueXie/ebpmf")
 ```
 
 ## Example

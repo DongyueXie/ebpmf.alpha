@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# stm
+# ebpmf
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -10,7 +10,7 @@ An R Package.
 
 ## Installation
 
-You can install the development version of `stm` from
+You can install the development version of `ebpmf` from
 [GitHub](https://github.com/) with:
 
 ``` r
@@ -19,7 +19,7 @@ You can install the development version of `stm` from
 # devtools::install_github("DongyueXie/smashrgen")
 # devtools::install_github("DongyueXie/smashr")
 # devtools::install_github("DongyueXie/ebpm")
-devtools::install_github("DongyueXie/stm")
+devtools::install_github("DongyueXie/ebpmf")
 ```
 
 ## Example
