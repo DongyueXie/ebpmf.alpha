@@ -13,7 +13,7 @@ Ltrue = matrix(rnorm(N*K), ncol=K)
 Lambda = exp(tcrossprod(Ltrue,Ftrue) + matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
-peakRAM(fit <- ebpmf_log(Y,l0=0,f0=0,flash_control=list(fix_f0=T)))
+peakRAM(fit <- ebpmf_log(Y,l0=0,f0=0,flash_control=list(fix_f0=T),init_control=list(conv_type='sigma2abs')))
 
 # peakRAM(fit <- splitting_PMF_flashier_low_memory(Y,verbose=TRUE,n_cores = 10,maxiter_vga = 2,printevery = 1,batch_size = 100))
 

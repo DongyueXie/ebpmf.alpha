@@ -11,6 +11,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
                           init_tol,
                           printevery,
                           single_gene_ebpm=TRUE,
+                          conv_type,
                           L_init=NULL,
                           F_init=NULL){
   n = nrow(Y)
@@ -41,7 +42,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
       }else{
         init_val = suppressWarnings(ebpm_normal(as.vector(Y),
                                                 g_init = list(mean=as.vector(outer(l0,f0,FUN='+')),var=NULL),
-                                                fix_g = c(TRUE,FALSE),tol=init_tol))
+                                                fix_g = c(TRUE,FALSE),tol=init_tol,conv_type = conv_type))
       }
 
       M = matrix(init_val$posterior$mean_log,nrow=n,ncol=p)
@@ -64,11 +65,11 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
           fit = suppressWarnings(ebpm_normal(Y[i,],
                                              g_init = list(mean=drop(l0[i]+f0),var=init_var_vga),
                                              q_init = list(m_init=fit$posterior$mean_log,v_init = init_var_vga),
-                                             fix_g = c(TRUE,FALSE),tol=init_tol))
+                                             fix_g = c(TRUE,FALSE),tol=init_tol,conv_type = conv_type))
         }else{
           fit = suppressWarnings(ebpm_normal(Y[i,],
                                              g_init = list(mean=drop(l0[i]+f0),var=NULL),
-                                             fix_g = c(TRUE,FALSE),tol=init_tol))
+                                             fix_g = c(TRUE,FALSE),tol=init_tol,conv_type = conv_type))
         }
 
         return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
@@ -95,11 +96,11 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
             fit = suppressWarnings(ebpm_normal(Y[,j],
                                                g_init = list(mean=drop(l0+f0[j]),var=init_var_vga),
                                                q_init = list(m_init=fit$posterior$mean_log,v_init = init_var_vga),
-                                               fix_g = c(TRUE,FALSE),tol=init_tol))
+                                               fix_g = c(TRUE,FALSE),tol=init_tol,conv_type = conv_type))
           }else{
             fit = suppressWarnings(ebpm_normal(Y[,j],
                                                g_init = list(mean=drop(l0+f0[j]),var=NULL),
-                                               fix_g = c(TRUE,FALSE),tol=init_tol))
+                                               fix_g = c(TRUE,FALSE),tol=init_tol,conv_type = conv_type))
           }
 
           return(list(sigma2 = fit$fitted_g$var,mean_log = fit$posterior$mean_log))
@@ -122,11 +123,11 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
             fit = suppressWarnings(ebpm_normal(Y[,j],
                                                g_init = list(mean=drop(l0+f0[j]),var=init_var_vga),
                                                q_init = list(m_init=fit$posterior$mean_log,v_init = init_var_vga),
-                                               fix_g = c(TRUE,FALSE),tol=init_tol))
+                                               fix_g = c(TRUE,FALSE),tol=init_tol,conv_type = conv_type))
           }else{
             fit = suppressWarnings(ebpm_normal(Y[,j],
                                                g_init = list(mean=drop(l0+f0[j]),var=NULL),
-                                               fix_g = c(TRUE,FALSE),tol=init_tol))
+                                               fix_g = c(TRUE,FALSE),tol=init_tol,conv_type = conv_type))
           }
           M[,j] = fit$posterior$mean_log
           sigma2_init[j] = fit$fitted_g$var

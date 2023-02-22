@@ -34,6 +34,7 @@
 #'\item{\code{verbose}}{print progress}
 #'\item{\code{printevery}}{print progress}
 #'\item{\code{single_gene_ebpm}}{whether use ebpm_exponential_mixture for single gene model, as init for vga}
+#'\item{\code{conv_type}}{for init vga fit, use either 'elbo' or 'sigma2abs' for convergence criteria}
 #'\item{\code{n_cores}}{Can utilize more than 1 core to perform initialization, using `mclapply` function.}
 #'\item{\code{n_refit_flash_init}}{The times to refit flash using another seed if no structure was found in initialization}
 #'}
@@ -149,7 +150,8 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                             init_control$n_cores,
                             init_control$init_tol,
                             init_control$printevery,
-                            init_control$single_gene_ebpm)
+                            init_control$single_gene_ebpm,
+                            init_control$conv_type)
   run_time_vga_init = difftime(Sys.time(),start_time,units = 'secs')
 
   sigma2 = init_val$sigma2_init
