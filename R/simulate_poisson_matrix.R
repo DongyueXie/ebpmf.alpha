@@ -89,14 +89,14 @@ sim_data_log_simple = function(N,p,K=2,l = 20,d=NULL,var_e = 0,phi=1.3){
 #'@importFrom Matrix Matrix
 #'@details The DGP is
 #'\deqn{Y\sim Poisson(S*\exp(LF'+E))}
-sim_data_real = function(S,L,FF,Sigma2,n_simu = 10,seed=12345){
+sim_data_real = function(L,FF,Sigma2,n_simu = 10,seed=12345){
   set.seed(seed)
-  n = nrow(S)
-  p = ncol(S)
+  n = nrow(L)
+  p = nrow(FF)
   Y = list()
   LF = tcrossprod(L,FF)
   for(i in 1:n_simu){
-    Lambda = S*exp(LF+matrix(rnorm(n*p,0,sqrt(Sigma2)),nrow=n,ncol=p))
+    Lambda = exp(LF+matrix(rnorm(n*p,0,sqrt(Sigma2)),nrow=n,ncol=p))
     Y[[i]] = Matrix(matrix(rpois(n*p,Lambda),nrow=n,ncol=p),sparse = TRUE)
   }
   return(list(Y=Y,Factor=FF,Loading=L,n_simu=n_simu))

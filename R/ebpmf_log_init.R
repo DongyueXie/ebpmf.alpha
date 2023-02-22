@@ -97,8 +97,6 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
                                                q_init = list(m_init=fit$posterior$mean_log,v_init = init_var_vga),
                                                fix_g = c(TRUE,FALSE),tol=init_tol))
           }else{
-            fit = ebpm_exponential_mixture(Y[,j],s = drop(exp(l0+f0[j])))
-            init_var_vga = mean(fit$posterior$mean_log^2)
             fit = suppressWarnings(ebpm_normal(Y[,j],
                                                g_init = list(mean=drop(l0+f0[j]),var=NULL),
                                                fix_g = c(TRUE,FALSE),tol=init_tol))
@@ -126,8 +124,6 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
                                                q_init = list(m_init=fit$posterior$mean_log,v_init = init_var_vga),
                                                fix_g = c(TRUE,FALSE),tol=init_tol))
           }else{
-            fit = ebpm_exponential_mixture(Y[,j],s = drop(exp(l0+f0[j])))
-            init_var_vga = mean(fit$posterior$mean_log^2)
             fit = suppressWarnings(ebpm_normal(Y[,j],
                                                g_init = list(mean=drop(l0+f0[j]),var=NULL),
                                                fix_g = c(TRUE,FALSE),tol=init_tol))

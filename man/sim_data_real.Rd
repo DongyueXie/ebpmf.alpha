@@ -4,7 +4,7 @@
 \alias{sim_data_real}
 \title{simulate Poisson matrix based on real data output}
 \usage{
-sim_data_real(S, L, FF, Sigma2, n_simu = 10, seed = 12345)
+sim_data_real(L, FF, Sigma2, n_simu = 10, seed = 12345)
 }
 \description{
 simulate Poisson matrix based on real data output

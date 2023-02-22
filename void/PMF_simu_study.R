@@ -3,7 +3,10 @@
 #'@import Matrix
 #'@export
 simu_study_PMF = function(simdata,n_cores = 1,
-                          method_list=c('flash','splitting'),
+                          method_list=c('flash','ebpmf'),
+                          ebnm_function = ebnm::ebnm_point_normal,
+                          loadings_sign = 0,
+                          factors_sign = 0,
                           Kmax=10,var_type='by_col',
                           maxiter=100,tol=1e-5){
   n_simu = simdata$n_simu
@@ -26,7 +29,6 @@ simu_study_PMF = function(simdata,n_cores = 1,
 
     fitted_model <- vector("list", n_method)
     names(fitted_model) <- method_list
-    #S0 = tcrossprod(simdata$L0[,i],simdata$F0[,i])
     # check row and col sums
     rs = rowSums(simdata$Y[[i]])
     cs = colSums(simdata$Y[[i]])
@@ -38,14 +40,17 @@ simu_study_PMF = function(simdata,n_cores = 1,
     if(length(rm_col_idx)!=0){
       simdata$Y[[i]] = (simdata$Y[[i]])[,-rm_col_idx]
     }
-    S = tcrossprod(c(rowSums(simdata$Y[[i]])),c(colSums(simdata$Y[[i]])))/sum(simdata$Y[[i]])
-    a = c(apply(S,2,median))
-    Y_normed = log(t(t((simdata$Y[[i]]/S))*(a/0.5))+1)
+
+    S = rowSums(simdata$Y[[i]])
+    Y_normed = log(1+median(S)*simdata$Y[[i]]/S)
     Y_normed = Matrix(Y_normed,sparse = T)
     print('Fitting flash')
-    fitted_model$flash = try(flash(Y_normed,greedy.Kmax = Kmax,var.type=var.type,verbose = 0,backfit = TRUE))
-    print('Fitting splitting PMF')
-    fitted_model$splitting = try(splitting_PMF_flashier(as.matrix(simdata$Y[[i]]),S,Kmax=Kmax,var_type=var_type,maxiter=maxiter,conv_tol=tol,n_cores=1,verbose = TRUE))
+    fitted_model$flash = try(flash(Y_normed,greedy.Kmax = Kmax,var.type=var.type,verbose = 0,backfit = TRUE,ebnm.fn = ebnm_function))
+    print('Fitting ebpmf PMF')
+    fitted_model$ebpmf = try(ebpmf_log(simdata$Y[[i]],
+                                          flash_control = list(Kmax=Kmax,ebnm.fn=ebnm_function,loadings_sign=loadings_sign,factors_sign=factors_sign),
+                                          var_type=var_type,
+                                          verbose = TRUE))
     # #mse_log = NULL
     # k_hat = NULL
     # if(class(fitted_model$flash)!='try-error'){
@@ -55,15 +60,15 @@ simu_study_PMF = function(simdata,n_cores = 1,
     #   #mse_log = c(mse_log,NA)
     #   k_hat = c(k_hat,NA)
     # }
-    # if(class(fitted_model$splitting)!='try-error'){
-    #   #mse_log = c(mse_log,rmse(fitted_model$splitting$fit_flash$fitted_values,tcrossprod(simdata$Loading[,,i],simdata$Factor[,,i])))
-    #   k_hat = c(k_hat,fitted_model$splitting$fit_flash$n.factors)
+    # if(class(fitted_model$ebpmf)!='try-error'){
+    #   #mse_log = c(mse_log,rmse(fitted_model$ebpmf$fit_flash$fitted_values,tcrossprod(simdata$Loading[,,i],simdata$Factor[,,i])))
+    #   k_hat = c(k_hat,fitted_model$ebpmf$fit_flash$n.factors)
     # }else{
     #   #mse_log = c(mse_log,NA)
     #   k_hat = c(k_hat,NA)
     # }
-    # #names(mse_log) = c('flash','splitting')
-    # names(k_hat) = c('flash','splitting')
+    # #names(mse_log) = c('flash','ebpmf')
+    # names(k_hat) = c('flash','ebpmf')
 
     # return(list(fitted_model = fitted_model,
     #             #rmse_log=mse_log,
