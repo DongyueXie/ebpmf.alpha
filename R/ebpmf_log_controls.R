@@ -1,10 +1,11 @@
 ebpmf_log_init_control_default = function(){
   return(list(n_cores=1,
               init_tol = 1e-5,
+              init_maxiter = 100,
               conv_type='elbo',
               verbose = TRUE,
               printevery = 100,
-              single_gene_ebpm = FALSE,
+              single_gene_expmix = FALSE,
               sigma2_init = NULL,
               M_init = NULL,
               n_refit_flash_init=5
