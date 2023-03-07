@@ -47,7 +47,8 @@ ebpmf_log_flash_init = function(M,sigma2,l0,f0,ones_n,ones_p,loadings_sign,facto
   n_refit = 0
   while(fit_flash$n.factors<=2&n_refit<=n_refit_max){
     n_refit = n_refit + 1
-    warning(paste('No new structure found yet. Re-trying...',n_refit))
+    cat(paste('No new structure found yet. Re-trying...',n_refit))
+    cat('\n')
     init.fn.flash = function(f){init.fn.default(f, dim.signs = c(loadings_sign, factors_sign),seed = n_refit)}
     fit_flash = flash.add.greedy(fit_flash, Kmax = Kmax,ebnm.fn = ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate)
     if(n_refit==n_refit_max){

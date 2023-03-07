@@ -3,15 +3,16 @@ set.seed(12345)
 N = 1000
 p = 100
 K = 3
-sigma2 = 0.25
+sigma2 = 0
 Ftrue = matrix(0,nrow=p,ncol=K)
-Ftrue[1:20,1] = 3
-Ftrue[21:40,2] = 2
+Ftrue[1:20,1] = 1
+Ftrue[21:40,2] = 1
 Ftrue[41:60,3] = 1
 Ltrue = matrix(rnorm(N*K), ncol=K)
 # test
 Lambda = exp(tcrossprod(Ltrue,Ftrue) + matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
+sum(Y!=0)/prod(dim(Y))
 
 peakRAM(fit <- ebpmf_log(Y,l0=0,f0=0,flash_control=list(fix_f0=T),init_control=list(conv_type='sigma2abs')))
 
