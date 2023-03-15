@@ -3,10 +3,12 @@
 #'@param K number of topics
 #'@param init init methods, or a list of init L and F
 #'@importFrom fastTopics fit_poisson_nmf
+#'@importFrom NNLM nnmf
 #'@export
 ebpmf_identity_init = function(X,K,init,maxiter_init = 50){
 
   n = nrow(X)
+  p = ncol(X)
   if(is.list(init)){
     L_init = init$L_init
     F_init = init$F_init
@@ -26,6 +28,11 @@ ebpmf_identity_init = function(X,K,init,maxiter_init = 50){
       L_init = L_init*sqrt(ratio)
       F_init = F_init*sqrt(ratio)
     }
+    if(init%in%c('scd','lee')){
+      X_init_fit = nnmf(as.matrix(X),K,method=init,loss='mkl',show.warning = F,verbose = F,max.iter = maxiter_init)
+      L_init = X_init_fit$W
+      F_init = t(X_init_fit$H)
+    }
     if(init == 'kmeans'){
       kmeans.init=kmeans(as.matrix(X),K,nstart=5)
       L_init = rep(1,n)%o%normalize(as.vector(table(kmeans.init$cluster)))
@@ -33,7 +40,7 @@ ebpmf_identity_init = function(X,K,init,maxiter_init = 50){
       row.names(F_init)=NULL
     }
     if(init == 'fasttopics'){
-      init_fasttopic = fit_poisson_nmf(X,K,numiter = maxiter_init)
+      init_fasttopic = fit_poisson_nmf(Matrix(X,sparse = T),K,numiter = maxiter_init)
       L_init = init_fasttopic$L
       F_init = init_fasttopic$F
     }
@@ -59,7 +66,7 @@ ebpmf_identity_init = function(X,K,init,maxiter_init = 50){
 
 }
 
-
+normalize=function(x) x/sum(x)
 
 
 #'
