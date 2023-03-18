@@ -3,9 +3,14 @@
 #'@param K number of topics
 #'@param init init methods, or a list of init L and F
 #'@importFrom fastTopics fit_poisson_nmf
-#'@importFrom NNLM nnmf
+#'@importFrom fastTopics init_poisson_nmf
+#'@importFrom Rfast rowsums
+#'@importFrom Rfast rowMaxs
 #'@export
-ebpmf_identity_init = function(X,K,init,maxiter_init = 50){
+ebpmf_identity_init = function(X,
+                               K,
+                               init,
+                               maxiter_init = 50){
 
   n = nrow(X)
   p = ncol(X)
@@ -28,11 +33,11 @@ ebpmf_identity_init = function(X,K,init,maxiter_init = 50){
       L_init = L_init*sqrt(ratio)
       F_init = F_init*sqrt(ratio)
     }
-    if(init%in%c('scd','lee')){
-      X_init_fit = nnmf(as.matrix(X),K,method=init,loss='mkl',show.warning = F,verbose = F,max.iter = maxiter_init)
-      L_init = X_init_fit$W
-      F_init = t(X_init_fit$H)
-    }
+    # if(init%in%c('scd','lee')){
+    #   X_init_fit = nnmf(as.matrix(X),K,method=init,loss='mkl',show.warning = F,verbose = F,max.iter = maxiter_init)
+    #   L_init = X_init_fit$W
+    #   F_init = t(X_init_fit$H)
+    # }
     if(init == 'kmeans'){
       kmeans.init=kmeans(as.matrix(X),K,nstart=5)
       L_init = rep(1,n)%o%normalize(as.vector(table(kmeans.init$cluster)))
@@ -40,7 +45,7 @@ ebpmf_identity_init = function(X,K,init,maxiter_init = 50){
       row.names(F_init)=NULL
     }
     if(init == 'fasttopics'){
-      init_fasttopic = fit_poisson_nmf(Matrix(X,sparse = T),K,numiter = maxiter_init)
+      init_fasttopic = fit_poisson_nmf(X,K,numiter = maxiter_init)
       L_init = init_fasttopic$L
       F_init = init_fasttopic$F
     }
@@ -51,11 +56,13 @@ ebpmf_identity_init = function(X,K,init,maxiter_init = 50){
   L_init = ratio$L_init
   F_init = ratio$F_init
 
-  gl = list(sigma2=NULL)
-  gf = list(sigma2=NULL)
+  gl = list()
+  gf = list()
 
-  ql = list(El = L_init, Elogl = log(L_init+1e-10), Esmooth_l=L_init)
-  qf = list(Ef = F_init, Elogf = log(F_init+1e-10), Esmooth_f=F_init)
+  ql = list(El = L_init, Elogl = log(L_init+1e-10))
+  qf = list(Ef = F_init, Elogf = log(F_init+1e-10))
+
+
 
   return(list(ql=ql,
               qf=qf,
@@ -65,6 +72,36 @@ ebpmf_identity_init = function(X,K,init,maxiter_init = 50){
               Hf = rep(0,K)))
 
 }
+
+
+
+# additional init function for smooting F
+ebpmf_identity_init_smooth = function(res,K,p,x,alpha,ebps_control,maxiter_init,ebpm.fn.f){
+  res$gf$sigma2 = rep(0,K)
+  res$qf$Ef_smooth= matrix(nrow=p,ncol=K)
+  res$qf$Elogf_smooth  = matrix(nrow=p,ncol=K)
+
+  for(k in 1:K){
+    Ez = calc_EZ(x, alpha[,k])
+    sk = ebpm.fn.f(Ez$cs,sum(res$ql$El[,k]),
+                   general_control = list(maxiter=maxiter_init,
+                                          maxiter_vga = ebps_control$maxiter_vga,
+                                          make_power_of_2=ebps_control$make_power_of_2,
+                                          vga_tol=ebps_control$vga_tol,
+                                          tol = ebps_control$tol),
+                   smooth_control = list(wave_trans=ebps_control$wave_trans,
+                                         ndwt_method = ebps_control$ndwt_method,
+                                         filter.number = ebps_control$filter.number,
+                                         family = ebps_control$family,
+                                         ebnm_params=ebps_control$ebnm_params,
+                                         warmstart=ebps_control$warmstart))
+    res$gf$sigma2[k] = sk$fitted_g$sigma2
+    res$qf$Ef_smooth[,k] = sk$posterior$mean_smooth
+    res$qf$Elogf_smooth[,k] = sk$posterior$mean_log_smooth
+  }
+  res
+}
+
 
 normalize=function(x) x/sum(x)
 
@@ -123,7 +160,7 @@ normalize=function(x) x/sum(x)
 #'   gf = list(sigma2=NULL)
 #'
 #'   ql = list(El = L_init, Elogl = log(L_init+1e-10), Esmooth_l=L_init)
-#'   qf = list(Ef = F_init, Elogf = log(F_init+1e-10), Esmooth_f=F_init)
+#'   qf = list(Ef = F_init, Elogf = log(F_init+1e-10), Ef_smooth=F_init)
 #'
 #'   return(list(ql=ql,
 #'               qf=qf,

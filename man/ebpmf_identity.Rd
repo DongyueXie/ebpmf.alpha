@@ -8,13 +8,12 @@ ebpmf_identity(
   X,
   K,
   init = "fasttopics",
-  maxiter = 100,
+  maxiter = 50,
   maxiter_init = 30,
   tol = 0.001,
-  ebpm.fn = c(ebpm::ebpm_point_gamma, smashrgen::pois_smooth_split),
+  ebpm.fn = c(ebpm::ebpm_point_gamma, smashrgen::ebps),
   fix_F = FALSE,
-  smooth_l = FALSE,
-  smooth_f = TRUE,
+  smooth_F = TRUE,
   smooth_control = list(),
   printevery = 10,
   verbose = TRUE,
@@ -26,9 +25,9 @@ ebpmf_identity(
 
 \item{K}{number of factors/ranks}
 
-\item{init}{initialization methods, 'lee','scd' from package NNLM, or 'uniform' randomly initialize; or provide init as a list with L_init and F_init.}
+\item{init}{initialization methods, 'fasttopics' or 'uniform' randomly initialize; or provide init as a list with L_init and F_init.}
 
-\item{maxiter}{maximum iterations}
+\item{maxiter, maxiter_init}{maximum iterations}
 
 \item{tol}{stop criteria}
 
@@ -36,13 +35,9 @@ ebpmf_identity(
 
 \item{fix_F}{if TRUE, F will not be updated.}
 
-\item{smooth_l, smooth_f}{whether smooth l or f, must match the functions in ebpm.fn}
+\item{smooth_F}{whether smooth l or f, must match the functions in ebpm.fn}
 
-\item{init_loss}{loss function of the initialization method, either mkl or mse.}
-
-\item{warm_start}{whether warm starts the ebpm. Useful for when smooth_l or f is true.}
-
-\item{return_all}{whether return all outputs or simplified ones}
+\item{smooth_control}{a list. ebpmf_identity_smooth_control_default() gives default settings.}
 }
 \value{
 EL,EF: posterior of loadings and factors

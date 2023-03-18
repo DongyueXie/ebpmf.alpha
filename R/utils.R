@@ -40,6 +40,11 @@ scale.cols <- function (A)
   apply(A,2,function (x) x/sum(x))
 
 
+calc_EZ = function(x, prob){
+  Ez = sparseMatrix(i = x$i, j = x$j, x = x$x * prob)
+  return(list(rs = Matrix::rowSums(Ez), cs = Matrix::colSums(Ez)))
+}
+
 softmax3d=function(x){
   #x = x - array(apply(x,c(1,2),max),dim=dim(x))
   x = exp(x)

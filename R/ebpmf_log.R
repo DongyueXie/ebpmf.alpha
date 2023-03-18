@@ -107,7 +107,7 @@
 #'@importFrom parallel mclapply
 #'@importFrom Matrix Diagonal
 #'@importFrom matrixStats colMaxs
-#'@importFrom matrixStats rowMaxs
+#'@importFrom Rfast rowMaxs
 #'@export
 ebpmf_log = function(Y,l0=NULL,f0=NULL,
                      var_type='by_col',
