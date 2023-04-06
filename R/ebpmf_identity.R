@@ -2,11 +2,11 @@
 #'@description This function fits Poisson Topic Model with smooth Loading or Factors
 #'@param X count matrix
 #'@param K number of factors/ranks
-#'@param init initialization methods, 'fasttopics' or 'uniform' randomly initialize; or provide init as a list with L_init and F_init.
+#'@param init initialization methods, default is 'fasttopics'; or provide init as a list with L_init, and F_init.
 #'@param maxiter,maxiter_init maximum iterations
 #'@param tol stop criteria
 #'@param ebpm.fn specify functions to use for solving the poisson subproblems
-#'@param fix_F if TRUE, F will not be updated.
+#'@param fix_F if TRUE, F will not be updated and will be fixed at the input value in init.
 #'@param smooth_F whether smooth l or f, must match the functions in ebpm.fn
 #'@param smooth_control a list. ebpmf_identity_smooth_control_default() gives default settings.
 #'@return EL,EF: posterior of loadings and factors
@@ -47,6 +47,17 @@ ebpmf_identity = function(X,K,
                           verbose=TRUE,
                           convergence_criteria = 'mKLabs'){
 
+  # remove columns that are all 0, and are at the start or end of the matrices
+  while(sum(X[,1])==0){
+    cat('Removed first column that are all 0')
+    cat('\n')
+    X = X[,-1]
+  }
+  while(sum(X[,ncol(X)])==0){
+    cat('Removed last column that are all 0')
+    cat('\n')
+    X = X[,-ncol(X)]
+  }
 
   start_time = Sys.time()
   #browser()

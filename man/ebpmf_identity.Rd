@@ -25,7 +25,7 @@ ebpmf_identity(
 
 \item{K}{number of factors/ranks}
 
-\item{init}{initialization methods, 'fasttopics' or 'uniform' randomly initialize; or provide init as a list with L_init and F_init.}
+\item{init}{initialization methods, default is 'fasttopics'; or provide init as a list with L_init, and F_init.}
 
 \item{maxiter, maxiter_init}{maximum iterations}
 
@@ -33,7 +33,7 @@ ebpmf_identity(
 
 \item{ebpm.fn}{specify functions to use for solving the poisson subproblems}
 
-\item{fix_F}{if TRUE, F will not be updated.}
+\item{fix_F}{if TRUE, F will not be updated and will be fixed at the input value in init.}
 
 \item{smooth_F}{whether smooth l or f, must match the functions in ebpm.fn}
 
