@@ -6,8 +6,8 @@ K = 3
 sigma2 = 0
 Ftrue = matrix(0,nrow=p,ncol=K)
 Ftrue[1:20,1] = 1
-Ftrue[21:40,2] = 1
-Ftrue[41:60,3] = 1
+Ftrue[21:40,2] = 2
+Ftrue[41:60,3] = 3
 Ltrue = matrix(rnorm(N*K), ncol=K)
 # test
 Lambda = exp(tcrossprod(Ltrue,Ftrue) + matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
@@ -106,3 +106,15 @@ plot(fit$fit_flash$F.pm[,4],type='l')
 # datax = sim_data_log_simple(500,400)
 # Y = datax$Y
 # S = tcrossprod(datax$l0,datax$f0)
+
+
+
+
+
+myPCA <- PLNPCA(Y ~ 1, ranks = 1:3)
+myPCA_ICL <- getBestModel(myPCA, "ICL")
+plot(myPCA_ICL$rotation[,1])
+plot(myPCA_ICL$rotation[,2])
+plot(myPCA_ICL$rotation[,3])
+
+
