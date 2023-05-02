@@ -17,6 +17,8 @@ ebpmf_identity_init = function(X,
   if(is.list(init)){
     L_init = init$L_init
     F_init = init$F_init
+    cat('F_init should be the EF from ebpmf_identity fit...')
+    cat('\n')
 
     if(is.null(L_init)&!is.null(F_init)){
       init_fasttopic = init_poisson_nmf(X,F=F_init,init.method='random')
@@ -45,7 +47,27 @@ ebpmf_identity_init = function(X,
       row.names(F_init)=NULL
     }
     if(init == 'fasttopics'){
-      init_fasttopic = fit_poisson_nmf(X,K,numiter = maxiter_init)
+      init_fasttopic = fit_poisson_nmf(X,K,numiter = maxiter_init,init.method = 'topicscore')
+      L_init = init_fasttopic$L
+      F_init = init_fasttopic$F
+    }
+    if(init == 'fasttopics_random'){
+      init_fasttopic = fit_poisson_nmf(X,K,numiter = maxiter_init,init.method = 'random')
+      L_init = init_fasttopic$L
+      F_init = init_fasttopic$F
+    }
+    if(init == 'fasttopics_em'){
+      init_fasttopic = fit_poisson_nmf(X,K,numiter = maxiter_init,method = 'em')
+      L_init = init_fasttopic$L
+      F_init = init_fasttopic$F
+    }
+    if(init == 'fasttopics_ccd'){
+      init_fasttopic = fit_poisson_nmf(X,K,numiter = maxiter_init,method = 'ccd')
+      L_init = init_fasttopic$L
+      F_init = init_fasttopic$F
+    }
+    if(init == 'fasttopics_mu'){
+      init_fasttopic = fit_poisson_nmf(X,K,numiter = maxiter_init,method = 'mu')
       L_init = init_fasttopic$L
       F_init = init_fasttopic$F
     }
@@ -75,9 +97,10 @@ ebpmf_identity_init = function(X,
 
 
 
-# additional init function for smooting F
+# additional init function for smoothing F
 ebpmf_identity_init_smooth = function(res,K,p,x,alpha,ebps_control,maxiter_init,ebpm.fn.f){
   res$gf$sigma2 = rep(0,K)
+  res$gf$sigma2_trace = rep(0,K)
   res$qf$Ef_smooth= matrix(nrow=p,ncol=K)
   res$qf$Elogf_smooth  = matrix(nrow=p,ncol=K)
 
@@ -96,6 +119,7 @@ ebpmf_identity_init_smooth = function(res,K,p,x,alpha,ebps_control,maxiter_init,
                                          ebnm_params=ebps_control$ebnm_params,
                                          warmstart=ebps_control$warmstart))
     res$gf$sigma2[k] = sk$fitted_g$sigma2
+    res$gf$sigma2_trace[k] = sk$fitted_g$sigma2
     res$qf$Ef_smooth[,k] = sk$posterior$mean_smooth
     res$qf$Elogf_smooth[,k] = sk$posterior$mean_log_smooth
   }

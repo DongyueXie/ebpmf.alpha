@@ -9,6 +9,7 @@
 #'@param fix_F if TRUE, F will not be updated and will be fixed at the input value in init.
 #'@param smooth_F whether smooth l or f, must match the functions in ebpm.fn
 #'@param smooth_control a list. ebpmf_identity_smooth_control_default() gives default settings.
+#'@param convergence_criteria 'mKLabs', or 'ELBO'
 #'@return EL,EF: posterior of loadings and factors
 #'@examples
 #'set.seed(123)
@@ -37,7 +38,7 @@
 ebpmf_identity = function(X,K,
                           init = 'fasttopics',
                           maxiter=50,
-                          maxiter_init = 30,
+                          maxiter_init = 100,
                           tol=1e-3,
                           ebpm.fn=c(ebpm::ebpm_point_gamma,smashrgen::ebps),
                           fix_F = FALSE,
@@ -109,16 +110,22 @@ ebpmf_identity = function(X,K,
     cat('running iterations')
     cat('\n')
   }
-  if(smooth_F){
-    res$ldf = poisson_to_multinom(res$qf$Ef_smooth,res$ql$El)
-  }else{
-    res$ldf = poisson_to_multinom(res$qf$Ef,res$ql$El)
-  }
+
+  # ########## why do i need this? For Labs converge ########
+  # if(smooth_F){
+  #   res$ldf = poisson_to_multinom(res$qf$Ef_smooth,res$ql$El)
+  # }else{
+  #   res$ldf = poisson_to_multinom(res$qf$Ef,res$ql$El)
+  # }
+  # ######################################
   for(iter in 1:maxiter){
 
     for(k in 1:K){
       Ez = calc_EZ(x, alpha[,k])
       res = stm_update_rank1(Ez$rs,Ez$cs,k,ebpm.fn.l,ebpm.fn.f,res,fix_F,smooth_F,smooth_control)
+    }
+    if(smooth_F){
+      res$gf$sigma2_trace = rbind(res$gf$sigma2_trace,res$gf$sigma2)
     }
     # Update Z
     # EZ = Calc_EZ(X,K,EZ,res$ql,res$qf)
@@ -158,23 +165,23 @@ ebpmf_identity = function(X,K,
       }
     }
 
-    if(convergence_criteria =='Labs'){
-      if(smooth_F){
-        ldf = poisson_to_multinom(res$qf$Ef_smooth,res$ql$El)
-      }else{
-        ldf = poisson_to_multinom(res$qf$Ef,res$ql$El)
-      }
-      obj[iter+1] = norm(res$ldf$L - ldf$L,type='F')
-      res$ldf = ldf
-      if(verbose){
-        if(iter%%printevery==0){
-          print(sprintf('At iter %d, ||L new - L|| F norm: %f',iter,obj[iter+1]))
-        }
-      }
-      if(obj[iter+1]/n_points<tol){
-        break
-      }
-    }
+    # if(convergence_criteria =='Labs'){
+    #   if(smooth_F){
+    #     ldf = poisson_to_multinom(res$qf$Ef_smooth,res$ql$El)
+    #   }else{
+    #     ldf = poisson_to_multinom(res$qf$Ef,res$ql$El)
+    #   }
+    #   obj[iter+1] = norm(res$ldf$L - ldf$L,type='F')
+    #   res$ldf = ldf
+    #   if(verbose){
+    #     if(iter%%printevery==0){
+    #       print(sprintf('At iter %d, ||L new - L|| F norm: %f',iter,obj[iter+1]))
+    #     }
+    #   }
+    #   if(obj[iter+1]/n_points<tol){
+    #     break
+    #   }
+    # }
   }
   if(iter==maxiter){
     message('Reached maximum iterations')
@@ -191,16 +198,27 @@ ebpmf_identity = function(X,K,
   elbo = calc_stm_obj(x,n,p,K,res,non0_idx)
 
 
+  ldf = poisson_to_multinom(res$qf$Ef,res$ql$El)
+  EL = ldf$L
+  EF = ldf$FF
   if(smooth_F){
-    ldf = poisson_to_multinom(res$qf$Ef_smooth,res$ql$El)
+    EF_smooth = scale.cols(res$qf$Ef_smooth)
   }else{
-    ldf = poisson_to_multinom(res$qf$Ef,res$ql$El)
+    EF_smooth = NULL
   }
-  fit = list(EL = ldf$L,
-             EF = ldf$FF,
+
+
+  # if(smooth_F){
+  #   ldf = poisson_to_multinom(res$qf$Ef_smooth,res$ql$El)
+  # }else{
+  #   ldf = poisson_to_multinom(res$qf$Ef,res$ql$El)
+  # }
+  fit = list(EL = EL,
+             EF = EF,
+             EF_smooth = EF_smooth,
              elbo=elbo,
              d=ldf$s,
-             obj=obj,
+             obj_trace=obj,
              res = res,
              run_time = difftime(Sys.time(),start_time,units='auto'))
   return(fit)
@@ -219,8 +237,8 @@ calc_approx_elbo_F = function(x,alpha,K,ebpm.fn.f,res,ebps_control){
                                            make_power_of_2=ebps_control$make_power_of_2,
                                            vga_tol=ebps_control$vga_tol,
                                            tol = ebps_control$tol),
-                    smooth_control = list(wave_trans='dwt',
-                                          ndwt_method = ebps_control$ndwt_method,
+                    smooth_control = list(wave_trans=ebps_control$wave_trans,
+                                          ndwt_method = 'smash',
                                           filter.number = ebps_control$filter.number,
                                           family = ebps_control$family,
                                           ebnm_params=ebps_control$ebnm_params,
@@ -251,6 +269,8 @@ calc_H = function(x,s,loglik,pm,pmlog){
   }
   H
 }
+
+#'@title rank 1 update of the model
 
 stm_update_rank1 = function(l_seq,f_seq,k,ebpm.fn.l,ebpm.fn.f,res,fix_F,smooth_F,ebps_control){
 

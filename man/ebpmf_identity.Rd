@@ -9,7 +9,7 @@ ebpmf_identity(
   K,
   init = "fasttopics",
   maxiter = 50,
-  maxiter_init = 30,
+  maxiter_init = 100,
   tol = 0.001,
   ebpm.fn = c(ebpm::ebpm_point_gamma, smashrgen::ebps),
   fix_F = FALSE,
@@ -38,6 +38,8 @@ ebpmf_identity(
 \item{smooth_F}{whether smooth l or f, must match the functions in ebpm.fn}
 
 \item{smooth_control}{a list. ebpmf_identity_smooth_control_default() gives default settings.}
+
+\item{convergence_criteria}{'mKLabs', or 'ELBO'}
 }
 \value{
 EL,EF: posterior of loadings and factors
