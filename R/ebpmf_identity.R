@@ -9,6 +9,7 @@
 #'@param fix_F if TRUE, F will not be updated and will be fixed at the input value in init.
 #'@param smooth_F whether smooth l or f, must match the functions in ebpm.fn
 #'@param smooth_control a list. ebpmf_identity_smooth_control_default() gives default settings.
+#'@param adj_LF_scale adjust scale of LF after each iteration for numerical stability
 #'@param convergence_criteria 'mKLabs', or 'ELBO'
 #'@return EL,EF: posterior of loadings and factors
 #'@examples
@@ -46,6 +47,7 @@ ebpmf_identity = function(X,K,
                           smooth_control=list(),
                           printevery=10,
                           verbose=TRUE,
+                          adj_LF_scale = TRUE,
                           convergence_criteria = 'mKLabs'){
 
   # remove columns that are all 0, and are at the start or end of the matrices
@@ -182,6 +184,20 @@ ebpmf_identity = function(X,K,
     #     break
     #   }
     # }
+
+    if(adj_LF_scale){
+      gammaL = colSums(res$ql$El)
+      gammaF = colSums(res$qf$Ef)
+      adjScale = sqrt(gammaL*gammaF)
+      sl = adjScale/gammaL
+      sf = adjScale/gammaF
+      res$ql$El = t(t(res$ql$El) * sl)
+      res$ql$Elogl = res$ql$Elogl + outer(rep(1,n),log(sl))
+      res$qf$Ef = t(t(res$qf$Ef) * sf)
+      res$qf$Ef_smooth = t(t(res$qf$Ef_smooth) * sf)
+      res$qf$Elogf = res$qf$Elogf + outer(rep(1,p),log(sf))
+      res$qf$Elogf_smooth = res$qf$Elogf_smooth + outer(rep(1,p),log(sf))
+    }
   }
   if(iter==maxiter){
     message('Reached maximum iterations')
@@ -281,6 +297,7 @@ stm_update_rank1 = function(l_seq,f_seq,k,ebpm.fn.l,ebpm.fn.f,res,fix_F,smooth_F
   res$ql$El[,k] = fit$posterior$mean
   res$ql$Elogl[,k] = fit$posterior$mean_log
   res$Hl[k] = calc_H(l_seq,l_scale,fit$log_likelihood,fit$posterior$mean,fit$posterior$mean_log)
+  res$gl[[k]] = fit$fitted_g
 
   if(!fix_F){
     # update f
@@ -302,6 +319,26 @@ stm_update_rank1 = function(l_seq,f_seq,k,ebpm.fn.l,ebpm.fn.f,res,fix_F,smooth_F
                                             family = ebps_control$family,
                                             ebnm_params=ebps_control$ebnm_params,
                                             warmstart=ebps_control$warmstart))
+
+      # fit = ebpm.fn.f(f_seq,f_scale,
+      #                 #g_init = list(sigma2 = res$gf$sigma2[k]),
+      #                 #q_init = list(smooth = res$qf$Elogf_smooth[,k]),
+      #                 #init_control = list(m_init_method='smash_poi'),
+      #                 general_control = list(
+      #                   #maxiter=ebps_control$maxiter,
+      #                   maxiter = 10,
+      #                   convergence_criteria = 'nugabs',
+      #                                        maxiter_vga = ebps_control$maxiter_vga,
+      #                                        make_power_of_2=ebps_control$make_power_of_2,
+      #                                        vga_tol=ebps_control$vga_tol,
+      #                                        tol = ebps_control$tol),
+      #                 smooth_control = list(wave_trans=ebps_control$wave_trans,
+      #                                       ndwt_method = ebps_control$ndwt_method,
+      #                                       filter.number = ebps_control$filter.number,
+      #                                       family = ebps_control$family,
+      #                                       warmstart=ebps_control$warmstart
+      #                                       ))
+
       res$qf$Ef[,k] = fit$posterior$mean
       res$qf$Elogf[,k] = fit$posterior$mean_log
       res$gf$sigma2[k] = fit$fitted_g$sigma2
@@ -347,7 +384,9 @@ ebpmf_identity_smooth_control_default = function(){
        make_power_of_2='extend',
        vga_tol=1e-3,
        tol = 1e-2,
-       warmstart=TRUE)
+       warmstart=TRUE,
+       convergence_criteria = 'nugabs',
+       m_init_method_for_init = 'smash_poi')
 }
 
 

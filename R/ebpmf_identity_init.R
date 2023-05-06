@@ -81,8 +81,8 @@ ebpmf_identity_init = function(X,
   gl = list()
   gf = list()
 
-  ql = list(El = L_init, Elogl = log(L_init+1e-10))
-  qf = list(Ef = F_init, Elogf = log(F_init+1e-10))
+  ql = list(El = L_init, Elogl = log(L_init+1e-8))
+  qf = list(Ef = F_init, Elogf = log(F_init+1e-8))
 
 
 
@@ -104,14 +104,19 @@ ebpmf_identity_init_smooth = function(res,K,p,x,alpha,ebps_control,maxiter_init,
   res$qf$Ef_smooth= matrix(nrow=p,ncol=K)
   res$qf$Elogf_smooth  = matrix(nrow=p,ncol=K)
 
+  #browser()
+
   for(k in 1:K){
     Ez = calc_EZ(x, alpha[,k])
     sk = ebpm.fn.f(Ez$cs,sum(res$ql$El[,k]),
+                   init_control=list(m_init_method = ebps_control$m_init_method_for_init),
                    general_control = list(maxiter=maxiter_init,
+                                          #convergence_criteria = 'nugabs',
                                           maxiter_vga = ebps_control$maxiter_vga,
                                           make_power_of_2=ebps_control$make_power_of_2,
                                           vga_tol=ebps_control$vga_tol,
-                                          tol = ebps_control$tol),
+                                          tol = ebps_control$tol
+                                          ),
                    smooth_control = list(wave_trans=ebps_control$wave_trans,
                                          ndwt_method = ebps_control$ndwt_method,
                                          filter.number = ebps_control$filter.number,

@@ -174,6 +174,7 @@ haar_inv_var = function(v,scale=sqrt(2)){
 
 #'@title This function is an EBNM function that fits ndwt method
 #'@importFrom smashr smash.gaus
+#'@export
 ebnm_ndwt = function(x, s, g_init, fix_g, output){
 
 

@@ -27,7 +27,7 @@ X = M + matrix(rnorm(n*p,0,sqrt(v)),nrow=n,ncol=p)
 library(flashier)
 fl <- flash(X, greedy.Kmax = 10L, backfit = TRUE,
             ebnm.fn = c(ebnm::ebnm_point_normal,
-                        ebnm_dwt_symlet))
+                        ebnm_dwt_haar))
 
 for (k in 1:fl$n.factors) {
   plot(fl$F.pm[,k],type='l')
