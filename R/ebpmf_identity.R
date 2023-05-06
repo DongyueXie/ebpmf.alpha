@@ -386,7 +386,7 @@ ebpmf_identity_smooth_control_default = function(){
        tol = 1e-2,
        warmstart=TRUE,
        convergence_criteria = 'nugabs',
-       m_init_method_for_init = 'smash_poi')
+       m_init_method_for_init = 'vga')
 }
 
 
