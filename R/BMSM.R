@@ -31,7 +31,7 @@ BMSM = function(x,sc=1,bmsm_control=list()){
 
   # whether reflect data so that it has a length of powers of 2
 
-  if(!ispowerof2(length(x))){
+  if(!smashr:::ispowerof2(length(x))){
     reflect=TRUE
   }
 
@@ -192,7 +192,7 @@ interleave=function(x,y){
 
 bmsm_control_default = function(){
   list(reflect = T,
-       shape = c(100, 50, 20, 10, 5, 2, 1),
+       shape = c(100, 50, 20, 10, 5, 1),
        point_mass=T,
        nullweight=1000,
        g_init = NULL,

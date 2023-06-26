@@ -38,3 +38,8 @@ plot(fit3$EF_smooth[,2],type='l')
 plot(fit3$EF_smooth[,3],type='l')
 
 
+fit = spmf(SRSF3,5,smooth_F = T,printevery = 1,tol=1e-5,maxiter = 50)
+
+
+
+

@@ -2,6 +2,7 @@
 #'@export
 #'
 cluster.mix=function(y,smooth=TRUE,pi0=NULL,phi0=NULL,K,tol,maxit,nugget=FALSE,nug_control=list()){
+  t0 = Sys.time()
   n=dim(y)[1]
   B=dim(y)[2]
   #if(is.null(pseudocounts)) pseudocounts=10^(round(log10(1/B/100000)))
@@ -20,16 +21,17 @@ cluster.mix=function(y,smooth=TRUE,pi0=NULL,phi0=NULL,K,tol,maxit,nugget=FALSE,n
   }
 
   out=EMproc.mix(y,smooth,pi0,phi0,n,K,B,tol,maxit,nugget,nug_control)
-  return(list(pi=out$pi,phi=out$phi,lambda=out$lambda,gamma=out$gamma,loglik=out$loglik))
+  t1 = Sys.time()
+  return(list(pi=out$pi,phi=out$phi,lambda=out$lambda,gamma=out$gamma,loglik=out$loglik,run_time = difftime(t1,t0)))
 }
 
-normalize=function(x){
-  #if(sum(abs(x))!=0){
-  return(x/sum(x))
-  #}else{
-  #  return(rep(0,length(x)))
-  #}
-}
+# normalize=function(x){
+#   #if(sum(abs(x))!=0){
+#   return(x/sum(x))
+#   #}else{
+#   #  return(rep(0,length(x)))
+#   #}
+# }
 
 smooth.lambda = function(lambda,nugget,nug_control){
   if(nugget){
@@ -51,6 +53,7 @@ smooth.lambda = function(lambda,nugget,nug_control){
     })))
   }else{
     return(t(apply(lambda,1,smash.poiss,cxx = FALSE)))
+    #return(t(apply(lambda,1,function(z){BMSM(z)$E})))
   }
 
 }
@@ -74,7 +77,9 @@ EMupd.mix=function(y,smooth,pi,phi,n,K,B,nugget,nug_control){
   #ykb=ybt/ybw
   #ykb[is.na(ykb)]=0
   #ykt=colSums(ykb)
-  lscale=((colSums(ybt)/colSums(pi))%o%rep(1,B))
+
+  #lscale=((colSums(ybt)/colSums(pi))%o%rep(1,B))
+  lscale=((colSums(ybt))%o%rep(1,B))
   lambda=phi*lscale
   #save(lambda,file="D:/Grad School/projects/sequence_clustering/results/analysis_k562ctcf/debug_lambda.Robj")
   phi.unsmoothed=NULL
