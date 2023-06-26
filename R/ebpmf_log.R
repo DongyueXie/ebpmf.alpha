@@ -288,6 +288,9 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                                        maxiter = vga_control$maxiter_vga,
                                        tol=vga_control$vga_tol,return_V = TRUE)
       fit_flash$flash.fit$Y = res$M
+      if(general_control$save_latent_M){
+        V = res$V
+      }
 
       ### These are for ELBO calculation later ###
       ############################################################
@@ -364,6 +367,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
 
   end_time = Sys.time()
   if(!general_control$save_latent_M){fit_flash$flash.fit$Y = NULL}
+  if(general_control$save_latent_M){fit_flash$flash.fit$V = V}
 
   return(list(fit_flash=fit_flash,
               elbo=obj[length(obj)],
@@ -468,5 +472,19 @@ my_ifelse = function(test,yes,no){
   }else{
     return(no)
   }
+}
+
+#'@title get posterior variance of b_ij = sum_j l_ik * f_jk
+get_var_b = function(fit_flash){
+  n = nrow(fit_flash$flash.fit$Y)
+  p = ncol(fit_flash$flash.fit$Y)
+  Vb = matrix(nrow=n,ncol=p)
+  for(i in 1:n){
+    for(j in 1:p){
+      temp = fit_flash$L.pm[i,]^2*(fit_flash$F.psd[j,]^2) + fit_flash$F.pm[j,]^2*(fit_flash$L.psd[i,]^2)
+      Vb[i,j] = sum(temp)
+    }
+  }
+  Vb
 }
 
