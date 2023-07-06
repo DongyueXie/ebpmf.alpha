@@ -141,6 +141,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
   general_control = modifyList(ebpmf_log_general_control_default(),general_control,keep.null = TRUE)
   vga_control = modifyList(ebpmf_log_vga_control_default(),vga_control,keep.null = TRUE)
   flash_control = modifyList(ebpmf_log_flash_control_default(),flash_control,keep.null = TRUE)
+  flash_control = check_flash_signs(flash_control)
   flash_control = c(flash_control,flash_extra_control(flash_control$loadings_sign,flash_control$factors_sign,flash_control$fix_l0,flash_control$fix_f0))
   sigma2_control = modifyList(ebpmf_log_sigma2_control_default(),sigma2_control,keep.null = TRUE)
   init_control = modifyList(ebpmf_log_init_control_default(),init_control,keep.null = TRUE)

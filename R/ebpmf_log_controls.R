@@ -78,3 +78,43 @@ ebpmf_log_flash_control_default = function(){
               verbose_flash=0
   ))
 }
+
+#'@title Check loadings and factors signs, to make sure they match ebnm.fn
+check_flash_signs = function(flash_control){
+  ebnm.fn = flash_control$ebnm.fn
+  loadings_sign = flash_control$loadings_sign
+  factors_sign = flash_control$factors_sign
+  if(length(ebnm.fn)==1){
+    ebnm.fn.l = ebnm.fn
+    ebnm.fn.f = ebnm.fn
+  }else{
+    ebnm.fn.l = ebnm.fn[[1]]
+    ebnm.fn.f = ebnm.fn[[2]]
+  }
+  loadings_sign_from_ebnm.fn = test_ebnm_fn_sign(ebnm.fn.l)
+  if(loadings_sign_from_ebnm.fn!=loadings_sign){
+    warning(paste('Detected umatched loadings_sign from ebnm.fn, setting loadings_sign to', loadings_sign_from_ebnm.fn))
+    flash_control$loadings_sign = loadings_sign_from_ebnm.fn
+  }
+  factors_sign_from_ebnm.fn = test_ebnm_fn_sign(ebnm.fn.f)
+  if(factors_sign_from_ebnm.fn!=factors_sign){
+    warning(paste('Detected umatched factors_sign from ebnm.fn, setting factors_sign to', factors_sign_from_ebnm.fn))
+    flash_control$factors_sign = factors_sign_from_ebnm.fn
+  }
+  return(flash_control)
+}
+
+#'@title test ebnm.fn 's sign
+test_ebnm_fn_sign = function(ebnm.fn){
+  temp = ebnm.fn(c(-10,0,10),c(1e-3,1e-3,1e-3))
+  if(all(temp$posterior$mean>=0)){
+    return(1)
+  }else if(all(temp$posterior$mean<=0)){
+    return(-1)
+  }else{
+    return(0)
+  }
+}
+
+
+

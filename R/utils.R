@@ -11,6 +11,12 @@ adjLF = function(L,FF){
   return(list(L_init = L, F_init=FF))
 }
 
+#'@title Log transformation of scRNA-seq count matrix for EBMF
+#'@export
+log_for_ebmf = function(Y){
+  log(1+median(rowSums(Y))/0.5*Y/rowSums(Y))
+}
+
 
 #'@title calculate mean KL divergence of 2 nonnegative matrices
 #'@export

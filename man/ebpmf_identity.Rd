@@ -17,6 +17,7 @@ ebpmf_identity(
   smooth_control = list(),
   printevery = 10,
   verbose = TRUE,
+  adj_LF_scale = TRUE,
   convergence_criteria = "mKLabs"
 )
 }
@@ -38,6 +39,8 @@ ebpmf_identity(
 \item{smooth_F}{whether smooth l or f, must match the functions in ebpm.fn}
 
 \item{smooth_control}{a list. ebpmf_identity_smooth_control_default() gives default settings.}
+
+\item{adj_LF_scale}{adjust scale of LF after each iteration for numerical stability}
 
 \item{convergence_criteria}{'mKLabs', or 'ELBO'}
 }
