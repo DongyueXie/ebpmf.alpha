@@ -1,7 +1,7 @@
 Package: ebpmf
 Type: Package
 Title: Empirical Bayes Poisson Matrix Factorization
-Version: 2.2.0
+Version: 2.2.1
 Author: Dongyue Xie
 Maintainer: Dongyue Xie <dyxie@uchicago.edu>
 Description: This package fits Empirical Bayes Poisson Matrix Factorization and allows for a wide family of priors. 

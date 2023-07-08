@@ -38,7 +38,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
         init_var_vga = mean(init_val$posterior$mean_log^2)
         init_val = suppressWarnings(ebpm_normal(as.vector(Y),
                                                 g_init = list(mean=as.vector(outer(l0,f0,FUN='+')),var=init_var_vga),
-                                                q_init = list(m_init = init_val$posterior$mean_log,v_init=init_var_vga),
+                                                q_init = list(m_init = init_val$posterior$mean_log + as.vector(outer(l0,f0,FUN='+')),v_init=init_var_vga),
                                                 fix_g = c(TRUE,FALSE),tol=init_tol,conv_type = conv_type,
                                                 maxiter = init_maxiter))
       }else{
@@ -67,7 +67,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
           init_var_vga = mean(fit$posterior$mean_log^2)
           fit = suppressWarnings(ebpm_normal(Y[i,],
                                              g_init = list(mean=drop(l0[i]+f0),var=init_var_vga),
-                                             q_init = list(m_init=fit$posterior$mean_log,v_init = init_var_vga),
+                                             q_init = list(m_init=fit$posterior$mean_log + drop(l0[i]+f0),v_init = init_var_vga),
                                              fix_g = c(TRUE,FALSE),tol=init_tol,conv_type = conv_type,
                                              maxiter = init_maxiter))
         }else{
@@ -100,7 +100,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
             init_var_vga = mean(fit$posterior$mean_log^2)
             fit = suppressWarnings(ebpm_normal(Y[,j],
                                                g_init = list(mean=drop(l0+f0[j]),var=init_var_vga),
-                                               q_init = list(m_init=fit$posterior$mean_log,v_init = init_var_vga),
+                                               q_init = list(m_init=fit$posterior$mean_log + drop(l0+f0[j]),v_init = init_var_vga),
                                                fix_g = c(TRUE,FALSE),tol=init_tol,conv_type = conv_type,
                                                maxiter = init_maxiter))
           }else{

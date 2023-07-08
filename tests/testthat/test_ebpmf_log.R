@@ -17,7 +17,6 @@ sum(Y!=0)/prod(dim(Y))
 peakRAM(fit <- ebpmf_log(Y,l0=0,f0=0,flash_control=list(fix_f0=T),init_control=list(conv_type='sigma2abs')))
 
 # peakRAM(fit <- splitting_PMF_flashier_low_memory(Y,verbose=TRUE,n_cores = 10,maxiter_vga = 2,printevery = 1,batch_size = 100))
-
 plot(fit$K_trace)
 plot(fitted(fit$fit_flash),tcrossprod(Ltrue,Ftrue),col='grey80')
 abline(a=0,b=1)
