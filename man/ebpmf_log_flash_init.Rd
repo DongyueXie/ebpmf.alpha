@@ -26,7 +26,9 @@ ebpmf_log_flash_init(
   backfit_warmstart,
   init.fn.flash,
   no_backfit_kset,
-  n_refit_max
+  n_refit_max,
+  deal_with_no_init_factor,
+  var.type
 )
 }
 \description{

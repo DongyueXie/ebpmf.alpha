@@ -38,6 +38,7 @@
 #'\item{\code{conv_type}}{for init vga fit, use either 'elbo' or 'sigma2abs' for convergence criteria}
 #'\item{\code{n_cores}}{Can utilize more than 1 core to perform initialization, using `mclapply` function.}
 #'\item{\code{n_refit_flash_init}}{The times to refit flash using another seed if no structure was found in initialization}
+#'\item{\code{deal_with_no_init_factor}}{If no factor found in initialization, use 'reduce_var' to reduce init var for flash, or 'flash_dryrun' for not providing the variance}
 #'}
 #'
 #'The \code{general_control} argument is a list in which any of the following
@@ -213,11 +214,15 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                                    flash_control$add_greedy_extrapolate,flash_control$maxiter_backfitting,
                                    flash_control$backfit_extrapolate,flash_control$backfit_warmstart,
                                    flash_control$init.fn.flash,flash_control$no_backfit_kset,
-                                   init_control$n_refit_flash_init)
+                                   init_control$n_refit_flash_init,
+                                   init_control$deal_with_no_init_factor,var.type)
   rm(M)
   gc()
   run_time_flash_init =  difftime(Sys.time(),t0,units = 'secs')
-
+  sigma2 = fit_flash$residuals.sd^2
+  if(general_control$save_init_val){
+    init_val$sigma2_after_flash = sigma2
+  }
   K_trace = fit_flash$n.factors
   sigma2_trace = sigma2
   obj = -Inf

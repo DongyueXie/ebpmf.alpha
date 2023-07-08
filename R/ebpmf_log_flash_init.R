@@ -3,7 +3,7 @@
 ebpmf_log_flash_init = function(M,sigma2,l0,f0,ones_n,ones_p,loadings_sign,factors_sign,ebnm.fn,ebnm.fn.offset,
                                 S.dim,verbose_flash,fix_l0,fix_f0,Kmax,add_greedy_extrapolate,maxiter_backfitting,
                                 backfit_extrapolate,backfit_warmstart,
-                                init.fn.flash,no_backfit_kset,n_refit_max){
+                                init.fn.flash,no_backfit_kset,n_refit_max,deal_with_no_init_factor,var.type){
 
   n = nrow(M)
   p = ncol(M)
@@ -60,7 +60,61 @@ ebpmf_log_flash_init = function(M,sigma2,l0,f0,ones_n,ones_p,loadings_sign,facto
   }
 
   if(fit_flash$n.factors<=2){
-    warning('No structure found in initialization.')
+    cat('No structure found in default initialization.')
+    cat('\n')
+    if(deal_with_no_init_factor=='reduce_var'){
+      cat('Reducing initialization sigma2')
+      cat('\n')
+      while(fit_flash$n.factors<=2){
+        # repeat
+        fit_flash = flash.init(M,S=sqrt(sigma2)/sqrt(2),var.type = NULL, S.dim=S.dim)%>%
+          flash.set.verbose(verbose_flash)
+        if(fix_l0){
+          fit_flash = flash.init.factors(fit_flash,list(l0, ones_p),ebnm.fn = ebnm.fixed.l0) %>%
+            flash.fix.factors(kset = 1, mode = 2)
+        }else{
+          fit_flash = flash.init.factors(fit_flash,list(l0, ones_p),ebnm.fn = ebnm.fn.offset) %>%
+            flash.fix.factors(kset = 1, mode = 2)
+        }
+        if(fix_f0){
+          fit_flash = flash.init.factors(fit_flash,list(ones_n, f0),ebnm.fn = ebnm.fixed.f0) %>%
+            flash.fix.factors(kset = 2, mode = 1)
+        }else{
+          fit_flash = flash.init.factors(fit_flash,list(ones_n, f0),ebnm.fn = ebnm.fn.offset) %>%
+            flash.fix.factors(kset = 2, mode = 1)
+        }
+        fit_flash = flash.add.greedy(fit_flash, Kmax = Kmax,ebnm.fn = ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate)
+        #kset_backfit = (1:fit_flash$n.factors)[!(1:fit_flash$n.factors)%in%no_backfit_kset]
+        fit_flash = suppressWarnings(flash.backfit(fit_flash,kset = kset_backfit,maxiter = maxiter_backfitting,extrapolate=backfit_extrapolate,warmstart = backfit_warmstart)%>%
+                                       flash.nullcheck(kset=kset_backfit))
+      }
+    }
+    if(deal_with_no_init_factor=='flash_dryrun'){
+      cat('Running flash with S=NULL')
+      cat('\n')
+      fit_flash = flash.init(M,S=NULL,var.type = var.type)%>%
+        flash.set.verbose(verbose_flash)
+      if(fix_l0){
+        fit_flash = flash.init.factors(fit_flash,list(l0, ones_p),ebnm.fn = ebnm.fixed.l0) %>%
+          flash.fix.factors(kset = 1, mode = 2)
+      }else{
+        fit_flash = flash.init.factors(fit_flash,list(l0, ones_p),ebnm.fn = ebnm.fn.offset) %>%
+          flash.fix.factors(kset = 1, mode = 2)
+      }
+
+      if(fix_f0){
+        fit_flash = flash.init.factors(fit_flash,list(ones_n, f0),ebnm.fn = ebnm.fixed.f0) %>%
+          flash.fix.factors(kset = 2, mode = 1)
+      }else{
+        fit_flash = flash.init.factors(fit_flash,list(ones_n, f0),ebnm.fn = ebnm.fn.offset) %>%
+          flash.fix.factors(kset = 2, mode = 1)
+      }
+
+      fit_flash = flash.add.greedy(fit_flash, Kmax = Kmax,ebnm.fn = ebnm.fn,init.fn=init.fn.flash,extrapolate = add_greedy_extrapolate)
+      #kset_backfit = (1:fit_flash$n.factors)[!(1:fit_flash$n.factors)%in%no_backfit_kset]
+      fit_flash = suppressWarnings(flash.backfit(fit_flash,kset = kset_backfit,maxiter = maxiter_backfitting,extrapolate=backfit_extrapolate,warmstart = backfit_warmstart)%>%
+                                     flash.nullcheck(kset=kset_backfit))
+    }
   }
 
   return(fit_flash)

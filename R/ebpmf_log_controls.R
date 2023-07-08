@@ -8,7 +8,8 @@ ebpmf_log_init_control_default = function(){
               single_gene_expmix = FALSE,
               sigma2_init = NULL,
               M_init = NULL,
-              n_refit_flash_init=5
+              n_refit_flash_init=5,
+              deal_with_no_init_factor = 'flash_dryrun'
               ))
 }
 
