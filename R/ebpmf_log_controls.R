@@ -5,7 +5,7 @@ ebpmf_log_init_control_default = function(){
               conv_type='elbo',
               verbose = TRUE,
               printevery = 100,
-              single_gene_expmix = FALSE,
+              ebpm_init = FALSE,
               sigma2_init = NULL,
               M_init = NULL,
               n_refit_flash_init=5,
@@ -45,9 +45,9 @@ ebpmf_log_sigma2_control_default = function(){
 flash_extra_control = function(loadings_sign,factors_sign,fix_l0,fix_f0){
   if(loadings_sign==0&factors_sign==0){
     # this is faster than the default init method in flash
-    init.fn.flash = function(f){init.fn.irlba(f)}
+    init.fn.flash = function(f){flash_greedy_init_irlba(f)}
   }else{
-    init.fn.flash = function(f){init.fn.default(f, dim.signs = c(loadings_sign, factors_sign))}
+    init.fn.flash = function(f){flash_greedy_init_default(f, sign_constraints = c(loadings_sign, factors_sign))}
   }
   no_backfit_kset = NULL
   if(fix_l0){

@@ -21,8 +21,8 @@ plot(fit$K_trace)
 plot(fitted(fit$fit_flash),tcrossprod(Ltrue,Ftrue),col='grey80')
 abline(a=0,b=1)
 fit$fit_flash$pve
-for(k in 1:fit$fit_flash$n.factors){
-  plot(fit$fit_flash$F.pm[,k],type='l')
+for(k in 1:fit$fit_flash$n_factors){
+  plot(fit$fit_flash$F_pm[,k],type='l')
 }
 # test nonegative loading option
 set.seed(12345)
@@ -35,8 +35,8 @@ plot(fit$K_trace)
 fit$fit_flash$pve
 plot(fitted(fit$fit_flash),tcrossprod(abs(Ltrue),Ftrue),col='grey80')
 abline(a=0,b=1)
-for(k in 1:fit$fit_flash$n.factors){
-  plot(fit$fit_flash$F.pm[,k],type='l')
+for(k in 1:fit$fit_flash$n_factors){
+  plot(fit$fit_flash$F_pm[,k],type='l')
 }
 
 

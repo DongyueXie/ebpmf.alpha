@@ -12,9 +12,9 @@ ebpmf_log_flash_update(
   iter,
   loadings_sign,
   factors_sign,
-  ebnm.fn,
-  ebnm.fn.offset,
-  S.dim,
+  ebnm_fn,
+  ebnm_fn.offset,
+  S_dim,
   verbose_flash,
   fix_l0,
   fix_f0,
@@ -26,7 +26,7 @@ ebpmf_log_flash_update(
   add_greedy_warmstart,
   backfit_extrapolate,
   backfit_warmstart,
-  init.fn.flash,
+  init_fn.flash,
   no_backfit_kset
 )
 }

@@ -13,9 +13,9 @@ ebpmf_log_flash_init(
   ones_p,
   loadings_sign,
   factors_sign,
-  ebnm.fn,
-  ebnm.fn.offset,
-  S.dim,
+  ebnm_fn,
+  ebnm_fn.offset,
+  S_dim,
   verbose_flash,
   fix_l0,
   fix_f0,
@@ -24,11 +24,11 @@ ebpmf_log_flash_init(
   maxiter_backfitting,
   backfit_extrapolate,
   backfit_warmstart,
-  init.fn.flash,
+  init_fn.flash,
   no_backfit_kset,
   n_refit_max,
   deal_with_no_init_factor,
-  var.type
+  var_type
 )
 }
 \description{

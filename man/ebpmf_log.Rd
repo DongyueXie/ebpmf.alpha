@@ -66,7 +66,7 @@ defined by \code{ebpmf_log_init_control_default}):
 \item{\code{init_maxiter}}{max iteration for initialization}
 \item{\code{verbose}}{print progress}
 \item{\code{printevery}}{print progress}
-\item{\code{single_gene_expmix}}{whether use ebpm_exponential_mixture for single gene model, as init for vga}
+\item{\code{ebpm_init}}{whether use ebpm_exponential_mixture for single gene model, as init for vga}
 \item{\code{conv_type}}{for init vga fit, use either 'elbo' or 'sigma2abs' for convergence criteria}
 \item{\code{n_cores}}{Can utilize more than 1 core to perform initialization, using `mclapply` function.}
 \item{\code{n_refit_flash_init}}{The times to refit flash using another seed if no structure was found in initialization}
