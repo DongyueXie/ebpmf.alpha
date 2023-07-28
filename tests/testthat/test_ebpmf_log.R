@@ -14,7 +14,9 @@ Lambda = exp(tcrossprod(Ltrue,Ftrue) + matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 sum(Y!=0)/prod(dim(Y))
 
-peakRAM(fit <- ebpmf_log(Y,l0=0,f0=0,flash_control=list(fix_f0=T),init_control=list(conv_type='sigma2abs')))
+peakRAM(fit <- ebpmf_log(Y,l0=0,f0=0,
+                         flash_control=list(fix_f0=T),
+                         init_control=list(log_init_for_non0y=T,flash_est_sigma2=T)))
 
 # peakRAM(fit <- splitting_PMF_flashier_low_memory(Y,verbose=TRUE,n_cores = 10,maxiter_vga = 2,printevery = 1,batch_size = 100))
 plot(fit$K_trace)
@@ -30,7 +32,7 @@ Lambda = exp(tcrossprod(abs(Ltrue),Ftrue)+ matrix(rnorm(N*p,0,sqrt(sigma2)),nrow
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 
 fit = ebpmf_log(Y,l0=0,f0=0,flash_control=list(ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_normal),
-                             loadings_sign = 1,fix_f0=T))
+                             loadings_sign = 1,fix_f0=T),init_control = list(log_init_for_non0y=T))
 plot(fit$K_trace)
 fit$fit_flash$pve
 plot(fitted(fit$fit_flash),tcrossprod(abs(Ltrue),Ftrue),col='grey80')
@@ -45,7 +47,8 @@ set.seed(12345)
 Lambda = exp(tcrossprod(abs(Ltrue),abs(Ftrue))+ matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
 Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
 fit = ebpmf_log(Y,l0=0,f0=0,flash_control=list(ebnm.fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_exponential),
-                                               loadings_sign = 1,factors_sign=1,fix_f0=T))
+                                               loadings_sign = 1,factors_sign=1,fix_f0=T),
+                init_control = list(log_for_non0y=T))
 for(k in 1:fit$fit_flash$n.factors){
   plot(fit$fit_flash$F.pm[,k],type='l')
 }

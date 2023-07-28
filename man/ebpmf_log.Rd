@@ -69,6 +69,8 @@ defined by \code{ebpmf_log_init_control_default}):
 \item{\code{ebpm_init}}{whether use ebpm_exponential_mixture for single gene model, as init for vga}
 \item{\code{conv_type}}{for init vga fit, use either 'elbo' or 'sigma2abs' for convergence criteria}
 \item{\code{n_cores}}{Can utilize more than 1 core to perform initialization, using `mclapply` function.}
+\item{\code{flash_est_sigma2}}{Use flash for initializing sigma2}
+\item{\code{log_init_for_non0y}{For non 0 y, use log(Y/exp(offset)) as init values}}
 \item{\code{n_refit_flash_init}}{The times to refit flash using another seed if no structure was found in initialization}
 \item{\code{deal_with_no_init_factor}}{If no factor found in initialization, use 'reduce_var' to reduce init var for flash, or 'flash_dryrun' for not providing the variance}
 }

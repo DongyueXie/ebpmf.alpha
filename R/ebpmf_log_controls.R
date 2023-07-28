@@ -9,6 +9,8 @@ ebpmf_log_init_control_default = function(){
               sigma2_init = NULL,
               M_init = NULL,
               n_refit_flash_init=5,
+              flash_est_sigma2=FALSE,
+              log_init_for_non0y=FALSE,
               deal_with_no_init_factor = 'flash_dryrun'
               ))
 }
@@ -61,6 +63,7 @@ flash_extra_control = function(loadings_sign,factors_sign,fix_l0,fix_f0){
 
 #'@title default flash parameters
 #'@importFrom ebnm ebnm_point_normal
+#'@importFrom ebnm ebnm_normal
 ebpmf_log_flash_control_default = function(){
   return(list(ebnm.fn = ebnm_point_normal,
               ebnm.fn.offset = ebnm_normal,

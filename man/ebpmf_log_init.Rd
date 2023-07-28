@@ -18,6 +18,7 @@ ebpmf_log_init(
   ebpm_init = TRUE,
   conv_type,
   init_maxiter,
+  log_init_for_non0y,
   L_init = NULL,
   F_init = NULL
 )

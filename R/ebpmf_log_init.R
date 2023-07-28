@@ -1,7 +1,6 @@
 #'@title this function initializes the ebpmf with log link
 #'@description sigma2, M needs initialization.
 #'@importFrom vebpm ebpm_normal
-#'@importFrom ebpm ebpm_exponential_mixture
 #'@importFrom ashr ash_pois
 
 ebpmf_log_init = function(Y,l0,f0,sigma2,
@@ -14,6 +13,7 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
                           ebpm_init=TRUE,
                           conv_type,
                           init_maxiter,
+                          log_init_for_non0y,
                           L_init=NULL,
                           F_init=NULL){
   n = nrow(Y)
@@ -27,7 +27,8 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
   # then we fit poisGG with mean = 0, var =sigma2
   if(is.null(M_init)&is.null(L_init)&is.null(F_init)){
     if(verbose){
-      cat('Initializing M...')
+      cat('Initializing')
+      cat('\n')
     }
     # pre-estimate sigma2, assuming LF = 0?.
     if(var_type=='constant'){
@@ -152,6 +153,11 @@ ebpmf_log_init = function(Y,l0,f0,sigma2,
         }
         rm(fit)
       }
+    }
+    if(log_init_for_non0y){
+      idx0 = which(Y!=0)
+      alpha0 = (tcrossprod(l0,rep(1,p))+tcrossprod(rep(1,n),f0))[idx0]
+      M[idx0] = log(Y[idx0]/exp(alpha0)) + alpha0
     }
     return(list(sigma2_init=sigma2_init,M_init=M))
   }

@@ -28,7 +28,8 @@ ebpmf_log_flash_init(
   no_backfit_kset,
   n_refit_max,
   deal_with_no_init_factor,
-  var_type
+  var_type,
+  flash_est_sigma2
 )
 }
 \description{

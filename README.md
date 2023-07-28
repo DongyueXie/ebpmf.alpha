@@ -6,7 +6,8 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-An R Package.
+An R Package for factorizing count matrix using flexible empirical Bayes
+methods.
 
 ## Installation
 
@@ -14,15 +15,46 @@ You can install the development version of `ebpmf` from
 [GitHub](https://github.com/) with:
 
 ``` r
+### install dependencies if necessary
 # install.packages("devtools")
 # devtools::install_github("DongyueXie/vebpm")
 # devtools::install_github("DongyueXie/smashrgen")
 # devtools::install_github("DongyueXie/smashr")
-# devtools::install_github("DongyueXie/ebpm")
 devtools::install_github("DongyueXie/ebpmf")
 ```
 
 ## Example
+
+### ebpmf_log
+
+``` r
+set.seed(12345)
+N = 1000
+p = 100
+K = 3
+sigma2 = 0
+Ftrue = matrix(0,nrow=p,ncol=K)
+Ftrue[1:20,1] = 1
+Ftrue[21:40,2] = 2
+Ftrue[41:60,3] = 3
+Ltrue = matrix(rnorm(N*K), ncol=K)
+# test
+Lambda = exp(tcrossprod(Ltrue,Ftrue) + matrix(rnorm(N*p,0,sqrt(sigma2)),nrow=N))
+Y = matrix(rpois(N*p,Lambda),nrow=N,ncol=p)
+sum(Y!=0)/prod(dim(Y))
+
+fit <- ebpmf_log(Y,l0=0,f0=0,
+                         flash_control=list(fix_f0=T))
+plot(fit$K_trace)
+plot(fitted(fit$fit_flash),tcrossprod(Ltrue,Ftrue),col='grey80')
+abline(a=0,b=1)
+fit$fit_flash$pve
+for(k in 1:fit$fit_flash$n_factors){
+  plot(fit$fit_flash$F_pm[,k],type='l')
+}
+```
+
+### ebpmf_identity
 
 ``` r
 set.seed(123)

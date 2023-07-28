@@ -1,9 +1,8 @@
 #'@title the init fit of flash in ebpmf log function
-#'@importFrom ebnm ebnm_normal
 ebpmf_log_flash_init = function(M,sigma2,l0,f0,ones_n,ones_p,loadings_sign,factors_sign,ebnm_fn,ebnm_fn.offset,
                                 S_dim,verbose_flash,fix_l0,fix_f0,Kmax,add_greedy_extrapolate,maxiter_backfitting,
                                 backfit_extrapolate,backfit_warmstart,
-                                init_fn.flash,no_backfit_kset,n_refit_max,deal_with_no_init_factor,var_type){
+                                init_fn.flash,no_backfit_kset,n_refit_max,deal_with_no_init_factor,var_type,flash_est_sigma2){
 
   n = nrow(M)
   p = ncol(M)
@@ -20,8 +19,14 @@ ebpmf_log_flash_init = function(M,sigma2,l0,f0,ones_n,ones_p,loadings_sign,facto
                 log_likelihood=sum(dnorm(x,f0,s,log=T))))
   }
 
-  fit_flash = flash_init(M,S=sqrt(sigma2),var_type = NULL, S_dim=S_dim)%>%
-              flash_set_verbose(verbose_flash)
+  if(flash_est_sigma2){
+    fit_flash = flash_init(M,var_type = var_type, S=NULL)%>%
+      flash_set_verbose(verbose_flash)
+  }else{
+    fit_flash = flash_init(M,S=sqrt(sigma2),var_type = NULL, S_dim=S_dim)%>%
+      flash_set_verbose(verbose_flash)
+  }
+
 
   if(fix_l0){
     fit_flash = flash_factors_init(fit_flash,list(l0, ones_p),ebnm_fn = ebnm.fixed.l0) %>%
@@ -51,6 +56,7 @@ ebpmf_log_flash_init = function(M,sigma2,l0,f0,ones_n,ones_p,loadings_sign,facto
     cat('\n')
     init_fn.flash = function(f){flash_greedy_init_default(f, sign_constraints = c(loadings_sign, factors_sign),seed = n_refit)}
     fit_flash = flash_greedy(fit_flash, Kmax = Kmax,ebnm_fn = ebnm_fn,init_fn=init_fn.flash,extrapolate = add_greedy_extrapolate)
+    kset_backfit = (1:fit_flash$n_factors)[!(1:fit_flash$n_factors)%in%no_backfit_kset]
     if(n_refit==n_refit_max){
       fit_flash = suppressWarnings(flash_backfit(fit_flash,kset = kset_backfit,maxiter = maxiter_backfitting,extrapolate=backfit_extrapolate,warmstart = backfit_warmstart))
     }else{
@@ -85,7 +91,7 @@ ebpmf_log_flash_init = function(M,sigma2,l0,f0,ones_n,ones_p,loadings_sign,facto
             flash_factors_fix(kset = 2, which_dim = "loadings")
         }
         fit_flash = flash_greedy(fit_flash, Kmax = Kmax,ebnm_fn = ebnm_fn,init_fn=init_fn.flash,extrapolate = add_greedy_extrapolate)
-        #kset_backfit = (1:fit_flash$n_factors)[!(1:fit_flash$n_factors)%in%no_backfit_kset]
+        kset_backfit = (1:fit_flash$n_factors)[!(1:fit_flash$n_factors)%in%no_backfit_kset]
         fit_flash = suppressWarnings(flash_backfit(fit_flash,kset = kset_backfit,maxiter = maxiter_backfitting,extrapolate=backfit_extrapolate,warmstart = backfit_warmstart)%>%
                                        flash_nullcheck(kset=kset_backfit))
       }

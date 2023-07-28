@@ -37,6 +37,8 @@
 #'\item{\code{ebpm_init}}{whether use ebpm_exponential_mixture for single gene model, as init for vga}
 #'\item{\code{conv_type}}{for init vga fit, use either 'elbo' or 'sigma2abs' for convergence criteria}
 #'\item{\code{n_cores}}{Can utilize more than 1 core to perform initialization, using `mclapply` function.}
+#'\item{\code{flash_est_sigma2}}{Use flash for initializing sigma2}
+#'\item{\code{log_init_for_non0y}{For non 0 y, use log(Y/exp(offset)) as init values}}
 #'\item{\code{n_refit_flash_init}}{The times to refit flash using another seed if no structure was found in initialization}
 #'\item{\code{deal_with_no_init_factor}}{If no factor found in initialization, use 'reduce_var' to reduce init var for flash, or 'flash_dryrun' for not providing the variance}
 #'}
@@ -155,7 +157,8 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                             init_control$printevery,
                             init_control$ebpm_init,
                             init_control$conv_type,
-                            init_control$init_maxiter)
+                            init_control$init_maxiter,
+                            init_control$log_init_for_non0y)
   run_time_vga_init = difftime(Sys.time(),start_time,units = 'secs')
 
   sigma2 = init_val$sigma2_init
@@ -200,7 +203,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
 
   if(verbose){
     cat('\n')
-    cat('running initial flash fit')
+    cat('Running initial EBMF fit')
     cat('\n')
   }
 
@@ -212,6 +215,10 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
   ###########################
   # need to change f0 and M if using both nonnegative laodings and factors
   # otherwise it is likely no factor can be founded!
+  # basically to change baseline f0
+  if(flash_control$loadings_sign ==1 & flash_control$factors_sign == 1){
+    f0 = cbind(apply(M-tcrossprod(l0,ones_p),2,min))
+  }
   ###########################
   fit_flash = ebpmf_log_flash_init(M,sigma2,l0,f0,ones_n,ones_p,flash_control$loadings_sign,flash_control$factors_sign,
                                    flash_control$ebnm.fn,flash_control$ebnm.fn.offset,
@@ -220,7 +227,7 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
                                    flash_control$backfit_extrapolate,flash_control$backfit_warmstart,
                                    flash_control$init.fn.flash,flash_control$no_backfit_kset,
                                    init_control$n_refit_flash_init,
-                                   init_control$deal_with_no_init_factor,var.type)
+                                   init_control$deal_with_no_init_factor,var.type,init_control$flash_est_sigma2)
   rm(M)
   gc()
   run_time_flash_init =  difftime(Sys.time(),t0,units = 'secs')
