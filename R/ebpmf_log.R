@@ -16,7 +16,7 @@
 #'  \item{run_time:}{run time of the algorithm}
 #'
 #'@details The model is
-#'\deqn{y_{ij}\sim Poisson(\exp(\mu_{ij})),}
+#'\deqn{y_{ij}\sim \text{Poisson}(\exp(\mu_{ij})),}
 #'\deqn{\mu_{ij} = l_{i0} + f_{j0} + \sum_k l_{ik}f_{jk} + \epsilon_{ij},}
 #'\deqn{l_{i0}\sim g_{l_0}(\cdot), f_{j0}\sim g_{f_0}(\cdot),}
 #'\deqn{l_{ik}\sim g_{l_k}(\cdot),f_{jk}\sim g_{f_k}(\cdot),}
@@ -213,10 +213,10 @@ ebpmf_log = function(Y,l0=NULL,f0=NULL,
   ones_p = cbind(rep(1,p))
 
   ###########################
-  # need to change f0 and M if using both nonnegative laodings and factors
+  # need to change f0 and M if using both non-negative loadings and factors
   # otherwise it is likely no factor can be founded!
   # basically to change baseline f0
-  if(flash_control$loadings_sign ==1 & flash_control$factors_sign == 1){
+  if(flash_control$loadings_sign ==1 & flash_control$factors_sign == 1 & !flash_control$fix_f0){
     f0 = cbind(apply(M-tcrossprod(l0,ones_p),2,min))
   }
   ###########################

@@ -48,7 +48,7 @@ Fit empirical Bayes Poisson matrix factorization with log link function
 }
 \details{
 The model is
-\deqn{y_{ij}\sim Poisson(\exp(\mu_{ij})),}
+\deqn{y_{ij}\sim \text{Poisson}(\exp(\mu_{ij})),}
 \deqn{\mu_{ij} = l_{i0} + f_{j0} + \sum_k l_{ik}f_{jk} + \epsilon_{ij},}
 \deqn{l_{i0}\sim g_{l_0}(\cdot), f_{j0}\sim g_{f_0}(\cdot),}
 \deqn{l_{ik}\sim g_{l_k}(\cdot),f_{jk}\sim g_{f_k}(\cdot),}
