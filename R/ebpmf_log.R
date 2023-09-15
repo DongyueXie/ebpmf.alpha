@@ -32,13 +32,13 @@
 #'\item{\code{M_init}}{the initial value for latent M}
 #'\item{\code{init_tol}}{tolerance for initialization}
 #'\item{\code{init_maxiter}}{max iteration for initialization}
-#'\item{\code{verbose}}{print progress}
-#'\item{\code{printevery}}{print progress}
-#'\item{\code{ebpm_init}}{whether use ebpm_exponential_mixture for single gene model, as init for vga}
+#'\item{\code{verbose}}{TRUE to print initialization progress}
+#'\item{\code{printevery}}{Set a number to determine how often to print progress}
+#'\item{\code{ebpm_init}}{whether use ash_pois for single gene model, as init for vga}
 #'\item{\code{conv_type}}{for init vga fit, use either 'elbo' or 'sigma2abs' for convergence criteria}
 #'\item{\code{n_cores}}{Can utilize more than 1 core to perform initialization, using `mclapply` function.}
-#'\item{\code{flash_est_sigma2}}{Use flash for initializing sigma2}
-#'\item{\code{log_init_for_non0y}{For non 0 y, use log(Y/exp(offset)) as init values}}
+#'\item{\code{flash_est_sigma2}}{TRUE to use flash for initializing sigma2}
+#'\item{\code{log_init_for_non0y}{If TRUE, then for non-0 counts, use log(Y/exp(offset)) as init values}}
 #'\item{\code{n_refit_flash_init}}{The times to refit flash using another seed if no structure was found in initialization}
 #'\item{\code{deal_with_no_init_factor}}{If no factor found in initialization, use 'reduce_var' to reduce init var for flash, or 'flash_dryrun' for not providing the variance}
 #'}
@@ -47,16 +47,17 @@
 #'named components will override the default algorithm settings (as
 #'defined by \code{ebpmf_log_general_control_default}):
 #'\describe{
-#'\item{\code{batch_size}}{reduce memory usage for vga step by looping subsets of dataset.}
+#'\item{\code{batch_size}}{Set this number to 1000 or 10000 or similar to reduce memory usage for vga step by looping subsets of dataset.}
 #'\item{\code{maxiter}}{max iteration allowed.}
 #'\item{\code{conv_tol}}{tolerance for convergence}
-#'\item{\code{printevery}}{print progress over iterations}
-#'\item{\code{garbage_collection_every}}{perform `gc()` to reduce memory usage}
-#'\item{\code{save_init_val}}{whether return initailization values}
-#'\item{\code{save_latent_M}}{whether return latent M, can be very large}
-#'\item{\code{save_fit_every}}{save intermediate results?}
-#'\item{\code{save_fit_path}}{save intermediate results path}
-#'\item{\code{save_fit_name}}{save intermediate name}
+#'\item{\code{printevery}}{How often to print progress over iterations}
+#'\item{\code{verbose}}{TRUE to print progress}
+#'\item{\code{garbage_collection_every}}{How often to perform `gc()` to reduce memory usage}
+#'\item{\code{save_init_val}}{TRUE to return initailization values of latent mu and sigma2}
+#'\item{\code{save_latent_M}}{TRUE to return latent M, its size can be very large}
+#'\item{\code{save_fit_every}}{How often to save intermediate results?}
+#'\item{\code{save_fit_path}}{Where to save intermediate results path}
+#'\item{\code{save_fit_name}}{What is the name to save intermediate results}
 #'}
 #'
 #'The \code{flash_control} argument is a list in which any of the following
@@ -65,20 +66,20 @@
 #'
 #'\describe{
 #'
-#'\item{\code{ebnm.fn}}{see `?flash`.}
-#'\item{\code{ebnm.fn.offset}}{The prior for \eqn{l_0}, \eqn{f_0} if not fixing them.}
-#'\item{\code{loadings_sign}}{see `?init.fn.default`, must match ebnm.fn}
-#'\item{\code{factors_sign}}{see `?init.fn.default`, must match ebnm.fn}
+#'\item{\code{ebnm.fn}}{see `?flash`, `ebnm_fn`.}
+#'\item{\code{ebnm.fn.offset}}{The prior for \eqn{l_0}, \eqn{f_0}, if not fixing them.}
+#'\item{\code{loadings_sign}}{see `?flash_greedy_init_default` sign_constraints, must match ebnm.fn}
+#'\item{\code{factors_sign}}{see `?flash_greedy_init_default` sign_constraints, must match ebnm.fn}
 #'\item{\code{fix_l0}}{fix  \eqn{l_0}?}
 #'\item{\code{fix_f0}}{fix  \eqn{f_0}?}
-#'\item{\code{Kmax}}{see `?flash`.}
+#'\item{\code{Kmax}}{see `?flash`, `greedy_Kmax`.}
 #'\item{\code{add_greedy_Kmax}}{The Kmax in add_greedy in iterations}
-#'\item{\code{add_greedy_warmstart}}{see `?flash.add.greedy`}
-#'\item{\code{add_greedy_extrapolate}}{see `?flash.add.greedy`}
-#'\item{\code{add_greedy_every}}{perform flash add greedy every `add_greedy_every` iterations.}
-#'\item{\code{maxiter_backfitting}}{max iterations for the flash backfitting,see `?flash.backfit`}
-#'\item{\code{backfit_extrapolate}}{see `?flash.backfit`}
-#'\item{\code{backfit_warmstart}}{see `?flash.backfit`}
+#'\item{\code{add_greedy_warmstart}}{see `?flash_greedy`}
+#'\item{\code{add_greedy_extrapolate}}{see `?flash_greedy`}
+#'\item{\code{add_greedy_every}}{perform flash_greedy every `add_greedy_every` iterations.}
+#'\item{\code{maxiter_backfitting}}{max iterations for the flash backfitting,see `?flash_backfit`}
+#'\item{\code{backfit_extrapolate}}{see `?flash_backfit`}
+#'\item{\code{backfit_warmstart}}{see `?flash_backfit`}
 #'\item{\code{verbose_flash}}{whether print flash updates}
 #'}
 #'
@@ -99,7 +100,7 @@
 #'\item{\code{est_sigma2}}{whether estimate the variance term or fix it at sigma2_init}
 #'\item{\code{a0,b0}}{Inverse-Gamma(a0,b0) prior on sigma2 for regularization.}
 #'\item{\code{cap_var_mean_ratio}}{only update sigma2 when if var/mean > (1+cap_var_mean_ratio). i.e. when overdispersion is low enough, stop updating sigma2 to boost convergence.}
-#'\item{\code{return_sigma2_trace}}{internal usage only}
+#'\item{\code{return_sigma2_trace}}{TRUE to return the sigma2 values along the iterations. internal usage only}
 #'}
 #'
 #'
