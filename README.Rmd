@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# ebpmf
+# ebpmf.alpha
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -22,7 +22,7 @@ An R Package for factorizing count matrix using flexible empirical Bayes methods
 
 ## Installation
 
-You can install the development version of `ebpmf` from [GitHub](https://github.com/) with:
+You can install the development version of `ebpmf.alpha` from [GitHub](https://github.com/) with:
 
 ``` r
 ### install dependencies if necessary
@@ -32,7 +32,7 @@ You can install the development version of `ebpmf` from [GitHub](https://github.
 # devtools::install_github("DongyueXie/vebpm")
 # devtools::install_github("DongyueXie/smashrgen")
 
-devtools::install_github("DongyueXie/ebpmf")
+devtools::install_github("DongyueXie/ebpmf.alpha")
 ```
 
 ## Example

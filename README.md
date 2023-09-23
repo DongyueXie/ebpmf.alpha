@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ebpmf
+# ebpmf.alpha
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -11,7 +11,7 @@ methods.
 
 ## Installation
 
-You can install the development version of `ebpmf` from
+You can install the development version of `ebpmf.alpha` from
 [GitHub](https://github.com/) with:
 
 ``` r
@@ -22,7 +22,7 @@ You can install the development version of `ebpmf` from
 # devtools::install_github("DongyueXie/vebpm")
 # devtools::install_github("DongyueXie/smashrgen")
 
-devtools::install_github("DongyueXie/ebpmf")
+devtools::install_github("DongyueXie/ebpmf.alpha")
 ```
 
 ## Example
