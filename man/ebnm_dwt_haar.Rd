@@ -4,7 +4,7 @@
 \alias{ebnm_dwt_haar}
 \title{Empirical Bayes wavelet smoothing haar wavelet for flashier}
 \usage{
-ebnm_dwt_haar(x, s, g_init, fix_g, output)
+ebnm_dwt_haar(x, s, g_init = NULL, fix_g = FALSE, output)
 }
 \description{
 Empirical Bayes wavelet smoothing haar wavelet for flashier

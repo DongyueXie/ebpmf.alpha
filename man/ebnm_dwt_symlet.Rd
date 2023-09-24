@@ -4,7 +4,7 @@
 \alias{ebnm_dwt_symlet}
 \title{Empirical Bayes wavelet smoothing symlet wavelet for flashier}
 \usage{
-ebnm_dwt_symlet(x, s, g_init, fix_g, output)
+ebnm_dwt_symlet(x, s, g_init = NULL, fix_g = FALSE, output)
 }
 \description{
 Empirical Bayes wavelet smoothing symlet wavelet for flashier

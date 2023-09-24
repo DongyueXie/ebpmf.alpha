@@ -111,13 +111,13 @@ ebnm_dwt = function(x, s, g_init, fix_g,
 
 #'@title Empirical Bayes wavelet smoothing haar wavelet for flashier
 #'@export
-ebnm_dwt_haar = function(x, s, g_init, fix_g, output){
+ebnm_dwt_haar = function(x, s, g_init=NULL, fix_g=FALSE, output){
   ebnm_dwt(x, s, g_init, fix_g,filter.number=1,family="DaubExPhase")
 }
 
 #'@title Empirical Bayes wavelet smoothing symlet wavelet for flashier
 #'@export
-ebnm_dwt_symlet = function(x, s, g_init, fix_g, output){
+ebnm_dwt_symlet = function(x, s, g_init=NULL, fix_g=FALSE, output){
   ebnm_dwt(x, s, g_init, fix_g,filter.number=10,family="DaubLeAsymm")
 }
 
