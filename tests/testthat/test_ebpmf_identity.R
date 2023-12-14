@@ -16,6 +16,10 @@ FF = exp(log(FF) + matrix(rnorm(p*K,0,0.5),ncol=p))
 lambda = L %*% FF
 X = matrix(rpois(n=length(lambda),lambda),nrow=n)
 
+ss = round(median(rowsums(X))/2)*2
+X = X/rowSums(X)
+X = X*c(rep(ss/2,n/2),rep(ss*2,n/2))
+
 fit0 = ebpmf_identity(X,3,printevery = 1,convergence_criteria = 'ELBO',ebpm.fn = ebpm::ebpm_point_gamma,smooth_F = F,tol=1e-5)
 plot(fit0$EF[,1],type='l')
 plot(fit0$EF[,2],type='l')

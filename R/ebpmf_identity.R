@@ -37,6 +37,7 @@
 #'@export
 
 ebpmf_identity = function(X,K,
+                          lib_size = NULL,
                           init = 'fasttopics',
                           maxiter=50,
                           maxiter_init = 100,
@@ -68,6 +69,10 @@ ebpmf_identity = function(X,K,
   p = dim(X)[2]
   n_points = n*p
 
+  if(is.null(lib_size)){
+    lib_size = rep(1,n)
+  }
+
   X = Matrix(X,sparse = T)
   x = summary(X)
   non0_idx = cbind(x$i,x$j)
@@ -87,7 +92,7 @@ ebpmf_identity = function(X,K,
     cat('\n')
   }
 
-  res = ebpmf_identity_init(X,K,init,maxiter_init)
+  res = ebpmf_identity_init(X,K,init,maxiter_init,lib_size)
   alpha = res$ql$Elogl[x$i,] + res$qf$Elogf[x$j,]
   exp_offset = rowMaxs(alpha)
   alpha = alpha - outer(exp_offset,rep(1,K),FUN='*')
@@ -139,9 +144,9 @@ ebpmf_identity = function(X,K,
 
     if(convergence_criteria == 'mKLabs'){
       if(smooth_F){
-        obj[iter+1] = mKL(x$x,tcrossprod(res$ql$El,res$qf$Ef_smooth)[non0_idx])
+        obj[iter+1] = mKL(x$x,(tcrossprod(res$ql$El,res$qf$Ef_smooth)*res$lib_size)[non0_idx])
       }else{
-        obj[iter+1] = mKL(x$x,tcrossprod(res$ql$El,res$qf$Ef)[non0_idx])
+        obj[iter+1] = mKL(x$x,(tcrossprod(res$ql$El,res$qf$Ef)*res$lib_size)[non0_idx])
       }
 
       if(verbose){
@@ -245,7 +250,7 @@ calc_approx_elbo_F = function(x,alpha,K,ebpm.fn.f,res,ebps_control){
 
   for(k in 1:K){
     Ez = calc_EZ(x, alpha[,k])
-    fit = ebpm.fn.f(Ez$cs,sum(res$ql$El[,k]),
+    fit = ebpm.fn.f(Ez$cs,sum(res$lib_size*res$ql$El[,k]),
                     g_init = list(sigma2 = res$gf$sigma2[k]),
                     q_init = list(m=res$qf$Elogf[,k],smooth = res$qf$Elogf_smooth[,k]),
                     general_control = list(maxiter=1,
@@ -259,7 +264,7 @@ calc_approx_elbo_F = function(x,alpha,K,ebpm.fn.f,res,ebps_control){
                                           family = ebps_control$family,
                                           ebnm_params=ebps_control$ebnm_params,
                                           warmstart=ebps_control$warmstart))
-    res$Hf[k] = calc_H(Ez$cs,sum(res$ql$El[,k]),fit$log_likelihood,fit$posterior$mean,fit$posterior$mean_log)
+    res$Hf[k] = calc_H(Ez$cs,sum(res$lib_size*res$ql$El[,k]),fit$log_likelihood,fit$posterior$mean,fit$posterior$mean_log)
   }
 
   res
@@ -270,9 +275,9 @@ calc_stm_obj = function(x,n,p,K,res,non0_idx){
   val = 0
   qz = calc_qz(n,p,K,res$ql,res$qf)
   for(k in 1:K){
-    val = val + qz[,,k]*(matrix(res$ql$Elogl[,k],nrow=n,ncol=p,byrow=F)+matrix(res$qf$Elogf[,k],nrow=n,ncol=p,byrow=T)-log(qz[,,k]))
+    val = val + qz[,,k]*(matrix(res$ql$Elogl[,k],nrow=n,ncol=p,byrow=F)+matrix(res$qf$Elogf[,k],nrow=n,ncol=p,byrow=T) + matrix(res$lib_size,nrow=n,ncol=p,byrow=F)-log(qz[,,k]))
   }
-  E1 = sum(x$x*val[non0_idx]) - sum(tcrossprod(res$ql$El,res$qf$Ef))
+  E1 = sum(x$x*val[non0_idx]) - sum(tcrossprod(res$lib_size*res$ql$El,res$qf$Ef)) - sum(lfactorial(x$x))
 
   return(E1+sum(res$Hl)+sum(res$Hf))
 }
@@ -292,7 +297,7 @@ stm_update_rank1 = function(l_seq,f_seq,k,ebpm.fn.l,ebpm.fn.f,res,fix_F,smooth_F
 
   # update l
   #l_seq = rowSums(Z)
-  l_scale = sum(res$qf$Ef[,k])
+  l_scale = sum(res$qf$Ef[,k])*res$lib_size
   fit = ebpm.fn.l(l_seq,l_scale)
   res$ql$El[,k] = fit$posterior$mean
   res$ql$Elogl[,k] = fit$posterior$mean_log
@@ -302,7 +307,7 @@ stm_update_rank1 = function(l_seq,f_seq,k,ebpm.fn.l,ebpm.fn.f,res,fix_F,smooth_F
   if(!fix_F){
     # update f
     #f_seq = colSums(Z)
-    f_scale = sum(res$ql$El[,k])
+    f_scale = sum(res$lib_size*res$ql$El[,k])
     if(smooth_F){
       #print(res$gf)
       fit = ebpm.fn.f(f_seq,f_scale,

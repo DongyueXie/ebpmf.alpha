@@ -7,6 +7,7 @@
 ebpmf_identity(
   X,
   K,
+  lib_size = NULL,
   init = "fasttopics",
   maxiter = 50,
   maxiter_init = 100,

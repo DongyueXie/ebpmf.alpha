@@ -10,7 +10,8 @@
 ebpmf_identity_init = function(X,
                                K,
                                init,
-                               maxiter_init = 50){
+                               maxiter_init = 50,
+                               lib_size){
 
   n = nrow(X)
   p = ncol(X)
@@ -74,9 +75,12 @@ ebpmf_identity_init = function(X,
   }
 
   # adjust scale of L and F, mainly for stability.
-  ratio = adjLF(L_init,F_init)
-  L_init = ratio$L_init
-  F_init = ratio$F_init
+  # ratio = adjLF(L_init,F_init)
+  # L_init = ratio$L_init
+  # F_init = ratio$F_init
+  ratio = poisson_to_libsize(F_init,L_init,lib_size)
+  L_init = ratio$L
+  F_init = ratio$FF
 
   gl = list()
   gf = list()
@@ -91,7 +95,8 @@ ebpmf_identity_init = function(X,
               gl=gl,
               gf=gf,
               Hl = rep(0,K),
-              Hf = rep(0,K)))
+              Hf = rep(0,K),
+              lib_size=lib_size))
 
 }
 
@@ -108,7 +113,7 @@ ebpmf_identity_init_smooth = function(res,K,p,x,alpha,ebps_control,maxiter_init,
 
   for(k in 1:K){
     Ez = calc_EZ(x, alpha[,k])
-    sk = ebpm.fn.f(Ez$cs,sum(res$ql$El[,k]),
+    sk = ebpm.fn.f(Ez$cs,sum(res$lib_size*res$ql$El[,k]),
                    init_control=list(m_init_method = ebps_control$m_init_method_for_init),
                    general_control = list(maxiter=maxiter_init,
                                           #convergence_criteria = 'nugabs',

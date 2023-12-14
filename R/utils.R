@@ -42,6 +42,18 @@ poisson_to_multinom <- function (FF, L) {
   return(list(FF = FF,L = L,s = s))
 }
 
+poisson_to_libsize <- function (FF, L, lib_size) {
+  res = poisson_to_multinom(FF,L)
+  size = res$s/lib_size
+  multinom_to_poisson(res$FF,res$L,size)
+}
+
+multinom_to_poisson <- function (FF, L,size) {
+  L = L * size
+  res = adjLF(L,FF)
+  return(list(FF = res$F_init,L = res$L_init))
+}
+
 scale.cols <- function (A)
   apply(A,2,function (x) x/sum(x))
 
