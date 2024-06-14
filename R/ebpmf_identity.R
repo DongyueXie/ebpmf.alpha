@@ -223,11 +223,10 @@ ebpmf_identity = function(X,K,
   EL = ldf$L
   EF = ldf$FF
   if(smooth_F){
-    EF_smooth = scale.cols(res$qf$Ef_smooth)
+    EF_smooth = scale_cols(res$qf$Ef_smooth)
   }else{
     EF_smooth = NULL
   }
-
 
   # if(smooth_F){
   #   ldf = poisson_to_multinom(res$qf$Ef_smooth,res$ql$El)

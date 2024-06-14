@@ -38,7 +38,7 @@ poisson_to_multinom <- function (FF, L) {
   L <- t(t(L) * colSums(FF))
   s <- rowSums(L)
   L <- L / s
-  FF <- scale.cols(FF)
+  FF <- scale_cols(FF)
   return(list(FF = FF,L = L,s = s))
 }
 
@@ -54,7 +54,7 @@ multinom_to_poisson <- function (FF, L,size) {
   return(list(FF = res$F_init,L = res$L_init))
 }
 
-scale.cols <- function (A)
+scale_cols <- function (A)
   apply(A,2,function (x) x/sum(x))
 
 
