@@ -2,7 +2,7 @@ Encoding: UTF-8
 Type: Package
 Package: ebpmf.alpha
 Title: Empirical Bayes Poisson Matrix Factorization
-Version: 2.3.8
+Version: 2.3.9
 Date: 2024-06-14
 Authors@R: person("Dongyue","Xie",role=c("aut","cre"),
                   email="dyxie@uchicago.edu")

@@ -228,7 +228,6 @@ ebpmf_identity = function(X,K,
     EF_smooth = NULL
   }
 
-
   # if(smooth_F){
   #   ldf = poisson_to_multinom(res$qf$Ef_smooth,res$ql$El)
   # }else{
