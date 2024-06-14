@@ -3,29 +3,32 @@ Type: Package
 Package: ebpmf.alpha
 Title: Empirical Bayes Poisson Matrix Factorization
 Version: 2.3.7
-Author: Dongyue Xie
-Maintainer: Dongyue Xie <dyxie@uchicago.edu>
-Description: This package fits Empirical Bayes Poisson Matrix
-    Factorization and allows for a wide family of priors.
-License: MIT
-LazyData: true
+Date: 2024-06-14
+Authors@R: person("Dongyue","Xie",role=c("aut","cre"),
+email="dyxie@uchicago.edu")
+Description: Fits Empirical Bayes Poisson Matrix Factorizations
+    allowing for a wide variety of prior families.
+URL: https://github.com/DongyueXie/ebpmf.alpha
+BugReports: https://github.com/DongyueXie/ebpmf.alpha/issues
+License: MIT + file LICENSE
 Imports:
     Matrix,
-    flashier,
     magrittr,
-    mixsqp,
+    parallel,
     vebpm,
     wavethresh,
     Rfast,
+    matrixStats,
+    mixsqp,
     ebnm,
     fastTopics,
-    matrixStats,
-    parallel,
     smashr,
-    smashrgen
+    smashrgen,
+    flashier
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
+NeedsCompilation: no
 VignetteBuilder: knitr
 RoxygenNote: 7.2.3
