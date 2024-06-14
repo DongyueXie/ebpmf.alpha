@@ -2,10 +2,10 @@ Encoding: UTF-8
 Type: Package
 Package: ebpmf.alpha
 Title: Empirical Bayes Poisson Matrix Factorization
-Version: 2.3.7
+Version: 2.3.8
 Date: 2024-06-14
 Authors@R: person("Dongyue","Xie",role=c("aut","cre"),
-email="dyxie@uchicago.edu")
+                  email="dyxie@uchicago.edu")
 Description: Fits Empirical Bayes Poisson Matrix Factorizations
     allowing for a wide variety of prior families.
 URL: https://github.com/DongyueXie/ebpmf.alpha
@@ -15,20 +15,30 @@ Imports:
     Matrix,
     magrittr,
     parallel,
-    vebpm,
     wavethresh,
-    Rfast,
     matrixStats,
+    Rfast,
     mixsqp,
     ebnm,
     fastTopics,
+    flashier,
     smashr,
     smashrgen,
-    flashier
+    ebpm,
+    vebpm
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
+Remotes:
+    stephenslab/mixsqp,
+    stephenslab/smashr,
+    stephenslab/ebnm,
+    stephenslab/fastTopics,
+    willwerscheid/flashier,
+    DongyueXie/smashrgen,
+    DongyueXie/ebpm,
+    DongyueXie/vebpm
 NeedsCompilation: no
 VignetteBuilder: knitr
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
